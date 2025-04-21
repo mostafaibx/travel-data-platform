@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+*.log
+*.sqlite3
+*.pkl
+.DS_Store
+
+# Virtual env
+.venv/
+.env
+.env.*
+
+# Jupyter & data exploration
+.ipynb_checkpoints/
+*.ipynb
+notebooks/
+
+# VSCode
+.vscode/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Cache
+.cache/
+__pypackages__/
+
+# Airflow (if using local install)
+airflow/airflow.db
+airflow/airflow-webserver.pid
+airflow/airflow.cfg
+logs/
+
+# Local data
+data/
+*.csv
+*.json
+*.parquet
+
+# Credentials
+*.key
+*.pem
+*.crt
+.gcloud/
+.google/
+
+# Pyproject lock (optional)
+poetry.lock
+uv.lock
