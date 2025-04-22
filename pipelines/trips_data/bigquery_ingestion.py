@@ -35,7 +35,7 @@ class BigQueryIngestion:
         self.client = get_bigquery_client(
             key_path=key_path,
             project_id=self.project_id,
-            location="US"  # Default location
+            location="EU"  # Default location
         )
         
         # Set up BigQuery resources
@@ -157,7 +157,7 @@ class BigQueryIngestion:
     
     def ingest_all_pending_files(self):
         """Ingest all pending CSV files in the raw data directory."""
-        raw_files = glob.glob(str(config.RAW_DATA_DIR / "*.csv"))
+        raw_files = glob.glob(str(config.PROCESSED_DATA_DIR / "*.csv"))
         
         if not raw_files:
             logger.info("No pending files to ingest")

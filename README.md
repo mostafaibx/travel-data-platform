@@ -1,212 +1,169 @@
-# Travel Data Platform
+# Modular Data Engineering Portfolio
 
-A data engineering platform to process travel data, generate synthetic data, and batch load to BigQuery.
+A comprehensive data engineering platform that simulates a startup's data infrastructure, integrating multiple data sources into a centralized data warehouse with analytics capabilities.
+
+## Overview
+
+This portfolio project demonstrates end-to-end data engineering skills through a modular architecture that processes data from various sources:
+
+- **API Integration**: Real-time and batch data collection from public APIs
+- **Flat File Processing**: Ingestion and transformation of CSV, JSON, and parquet files
+- **Web Scraping**: Automated extraction of structured data from websites
+- **Database Connectors**: Integration with SQL and NoSQL databases
+
+All data sources feed into a centralized cloud data warehouse that follows dimensional modeling principles, enabling comprehensive analytics and business intelligence.
 
 ## Architecture
 
-This platform consists of the following main components:
+![Data Platform Architecture](docs/images/architecture.png)
 
-1. **Data Generator**: Creates synthetic travel data based on patterns from the original dataset
-2. **BigQuery Ingestion**: Handles data loading and transformations into BigQuery
-3. **Pipeline Orchestration**: Coordinates the data generation and ingestion processes
-4. **Scheduler**: Provides automated daily runs of the pipeline
+The platform consists of several interconnected components:
 
-## Installation
+1. **Data Ingestion Layer**: 
+   - Multiple independent pipelines for different data sources
+   - Support for both batch and streaming ingestion patterns
+   - Fault-tolerant design with retry mechanisms and logging
+
+2. **Data Storage Layer**:
+   - Cloud data warehouse (BigQuery) as the central repository
+   - Data lake for raw data storage
+   - Dimensional modeling with both star and snowflake schemas
+
+3. **Transformation Layer**:
+   - ELT (Extract, Load, Transform) approach
+   - Comprehensive data quality checks
+   - Change data capture for incremental processing
+
+4. **Orchestration Layer**:
+   - Workflow coordination using Apache Airflow
+   - Dependency management between pipelines
+   - Monitoring and alerting
+
+5. **Visualization Layer**:
+   - Interactive dashboards built with Looker Studio
+   - Business-focused KPI reporting
+
+## Data Sources
+
+The platform integrates these data sources:
+
+1. **Travel API Pipeline**: 
+   - Real-time flight and hotel pricing data
+   - Weather information affecting travel patterns
+   - Historical travel trends
+
+2. **OpenWeather API**:
+   - 
+   - 
+
+3. **Travler Trip Dataset**: 
+   - Generate synthatic data from the Travler Trip ds
+   - Handle CSV file in batch ingestion
+
+ To Be Done .....
+
+## Data Warehouse Design
+
+The warehouse will follow best practices in setting different stages of data eg. staging, dwh, etc..
+It will be implmented in Star Schema, following best practices as mentioned in dbt course.
+
+To Be Done: 
+   - Add details doc for dwh planning, archeticture, descisions, etc...
+
+## Technologies Used
+
+- **Data Ingestion**: Python
+- **Storage**: Google BigQuery, Google Cloud Storage
+- **Processing**: Apache Spark, dbt
+- **Orchestration**: Apache Airflow
+- **Visualization**: Looker Studio, Tableau
+- **Infrastructure**: Google Cloud Platform, Docker, Terraform
+- **CI/CD**: GitHub Actions
+
+## Getting Started
 
 ### Prerequisites
 
-- Python 3.12 or later
+- Python 3.8 or later
 - Google Cloud account with BigQuery enabled
-- `gcloud` CLI authenticated with appropriate permissions
+- Docker and Docker Compose
+- Terraform (optional, for infrastructure deployment)
 
 ### Setup
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/travel-data-platform.git
-   cd travel-data-platform
+   git clone https://github.com/yourusername/data-engineering-portfolio.git
+   cd data-engineering-portfolio
    ```
 
-2. Install the package:
+2. Set up the environment:
    ```
    pip install -e .
    ```
 
-3. Set up Google Cloud credentials:
-
-   The platform provides a utility to help you set up and manage Google Cloud credentials:
-
+3. Configure credentials:
    ```
-   # View authentication setup options
-   python main.py auth --help
-
-   # Set up credentials from a service account key file
+   # Set up Google Cloud credentials
    python main.py auth --setup --key-file /path/to/your-service-account-key.json
-
-   # Verify that your credentials work
-   python main.py auth --setup --verify
    ```
 
-   Alternative methods:
-   
+4. Start the infrastructure:
    ```
-   # Set environment variable directly
-   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/service-account-key.json
-   
-   # Or provide key file path with each command
-   python main.py trips ingest --key-path /path/to/your/service-account-key.json
+   docker-compose up -d
    ```
 
-### Google Cloud Setup
+## Usage Examples
 
-1. Create a service account in the Google Cloud Console with these roles:
-   - BigQuery Data Editor
-   - BigQuery Job User
+### Run a Single Pipeline
 
-2. Create a service account key (JSON format) and download it
-
-3. Use the key with our authentication system using one of the methods above
-
-## Usage
-
-The platform provides a command-line interface for interacting with the pipeline:
-
-### Generate Data
-
-To generate new synthetic travel data:
+To run the travel data pipeline:
 
 ```
-python main.py trips generate --count 20
+python main.py travel pipeline --run-complete
 ```
 
-#### Data Generation Methods
-
-The platform supports two methods for generating synthetic data:
-
-1. **Distribution-based** (default): Uses statistical patterns from the original dataset to generate realistic data that maintains the original distributions.
-
-```
-python main.py trips generate --method distribution
-```
-
-2. **Faker-based**: Uses the Faker library to generate entirely synthetic data without relying on the original dataset's patterns.
-
-```
-python main.py trips generate --method faker
-```
-
-Choose the method based on your needs:
-- Use **distribution** when you want data that closely resembles the statistical properties of your original dataset.
-- Use **faker** when you want more diverse data or don't have a representative original dataset.
-
-### Ingest Data to BigQuery
-
-To ingest all pending CSV files to BigQuery:
-
-```
-python main.py trips ingest
-```
-
-With custom authentication:
-
-```
-python main.py trips ingest --key-path /path/to/key.json --project-id your-project-id
-```
-
-### Run Full Pipeline
-
-To run the complete pipeline (generate and ingest):
-
-```
-python main.py trips pipeline
-```
-
-You can also run only part of the pipeline:
-
-```
-python main.py trips pipeline --generate-only
-python main.py trips pipeline --ingest-only
-```
-
-You can specify which data generation method to use:
-
-```
-python main.py trips pipeline --method faker
-```
-
-### Schedule Pipeline
-
-To schedule the pipeline to run daily:
-
-```
-python main.py trips schedule --time 01:00 --run-now
-```
-
-You can specify which data generation method to use in the scheduled runs:
-
-```
-python main.py trips schedule --time 01:00 --run-now --method faker
-```
-
-With custom authentication:
-
-```
-python main.py trips schedule --time 01:00 --key-path /path/to/key.json
-```
-
-This will schedule the pipeline to run at 1 AM daily and also run it immediately.
-
-## Authentication Management
-
-The platform offers several options for managing Google Cloud authentication:
-
-1. **Environment Variable**: Set `GOOGLE_APPLICATION_CREDENTIALS` to point to your key file
-2. **Default Location**: Store your key at `~/.gcp/service-account-key.json`
-3. **Explicit Path**: Provide the `--key-path` argument with each command
-4. **Authentication Helper**: Use the `auth` command to set up credentials
-
-The system follows this priority order when looking for credentials:
-1. Explicitly provided `--key-path` in the command
-2. `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-3. Default location at `~/.gcp/service-account-key.json`
 
 ## Directory Structure
 
 ```
-travel-data-platform/
+data-engineering-portfolio/
 ├── pipelines/
-│   ├── common/
-│   │   ├── __init__.py
-│   │   ├── gcp_auth.py        # Authentication utilities
-│   │   └── setup_credentials.py # Credential setup helper
-│   ├── trips_data/
-│   │   ├── data/
-│   │   │   ├── raw/         # Raw generated CSV files
-│   │   │   └── processed/   # Files that have been processed
-│   │   ├── __init__.py
-│   │   ├── config.py        # Configuration parameters
-│   │   ├── data_generator.py # Distribution-based data generation
-│   │   ├── faker_data_generator.py # Faker-based data generation
-│   │   ├── bigquery_ingestion.py # BigQuery loading
-│   │   ├── pipeline.py      # Pipeline orchestration
-│   │   └── scheduler.py     # Scheduling functionality
-│   └── weather_api_pipeline/ # Other pipelines (future)
-└── main.py                  # CLI entry point
+│   ├── common/                   # Shared utilities
+│   ├── trips_data/               # Synthatic CSV trips data
+│   └── weather_api/              # Weather data pipeline
+├── warehouse/
+│   ├── schemas/                  # DDL for warehouse tables
+│   ├── dbt/                      # dbt models for transformations
+│   └── views/                    # SQL views for reporting
+├── airflow/
+│   └── dags/                     # Airflow DAG definitions
+├── infrastructure/
+│   └── terraform/                # IaC for cloud resources
+├── dashboards/
+│   └── looker_studio/            # Dashboard templates
+└── main.py                       # CLI entry point
 ```
 
-## Data Engineering Practices
+## Learning Outcomes
 
-This project implements several data engineering best practices:
+This portfolio demonstrates competency in:
 
-1. **Modular Design**: Each component is separated into its own module with clear responsibilities
-2. **Configuration Management**: Centralized configuration in a dedicated module
-3. **Logging**: Comprehensive logging for monitoring and debugging
-4. **Error Handling**: Robust error handling throughout the pipeline
-5. **Data Validation**: Transformation and validation of data before loading
-6. **Idempotent Operations**: Files are moved after processing to prevent duplicate ingestion
-7. **Metadata Capture**: Each record is tagged with processing metadata
-8. **Graceful Termination**: Signals are properly handled for clean shutdowns
-9. **Secure Authentication**: Multiple secure methods for handling service account keys
+1. **Data Engineering Fundamentals**: ETL/ELT processes, data warehousing, dimensional modeling
+2. **Cloud Infrastructure**: Scalable data solutions on GCP
+3. **Modern Data Stack**: Integration of current tools and practices
+4. **Data Quality**: Implementation of testing and validation
+5. **Production-Grade Code**: Error handling, logging, documentation
+6. **DevOps Practices**: CI/CD, infrastructure as code, containerization
+
+## Next Steps
+
+Planned enhancements include:
+
+- Streaming data processing with Kafka and Spark Streaming
+- Implementation of data quality monitoring with Great Expectations
+- Machine learning pipeline integration
+- Enhanced security features and role-based access
 
 ## License
 

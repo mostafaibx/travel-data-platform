@@ -15,8 +15,8 @@ os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 ORIGINAL_DATA_FILE = BASE_DIR / "Travel details dataset.csv"
 
 # BigQuery settings
-PROJECT_ID = "travel-data-platform"
-DATASET_ID = "travel_data"
+PROJECT_ID = "travler-data-platform"
+DATASET_ID = "staging"
 TABLE_ID = "trip_details"
 BQ_TABLE_PATH = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 

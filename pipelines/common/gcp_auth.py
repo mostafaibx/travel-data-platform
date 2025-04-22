@@ -70,10 +70,8 @@ def get_credentials(
             "\n3. Provide an explicit key_path parameter"
         )
     
-    # Override project ID if provided
-    if project_id:
-        credentials = credentials.with_project_id(project_id)
-        
+    # We don't need to override project_id in credentials anymore
+    # as we'll pass it directly to the BigQuery client
     return credentials
 
 
@@ -96,7 +94,7 @@ def get_bigquery_client(
     credentials = get_credentials(key_path, project_id)
     
     # Use the project ID from credentials if not explicitly provided
-    if not project_id:
+    if not project_id and hasattr(credentials, 'project_id'):
         project_id = credentials.project_id
     
     client = bigquery.Client(

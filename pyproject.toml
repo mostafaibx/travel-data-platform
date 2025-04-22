@@ -10,11 +10,15 @@ dependencies = [
     "google-cloud-bigquery>=3.11.4",
     "schedule>=1.2.0",
     "faker>=18.4.0",
+    "pyarrow>=19.0.1"
 ]
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["pipelines"]
 
 [project.optional-dependencies]
 dev = [

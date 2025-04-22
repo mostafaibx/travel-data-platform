@@ -45,7 +45,6 @@ data/
 # Keys
 keys/
 
-*.md
 
 # Credentials
 *.key
