@@ -42,6 +42,11 @@ data/
 *.json
 *.parquet
 
+# Keys
+keys/
+
+*.md
+
 # Credentials
 *.key
 *.pem

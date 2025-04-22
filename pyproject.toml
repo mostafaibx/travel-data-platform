@@ -1,7 +1,25 @@
 [project]
 name = "travel-data-platform"
 version = "0.1.0"
-description = "Add your description here"
+description = "Data platform for travel data processing and analysis"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "google-cloud-bigquery>=3.11.4",
+    "schedule>=1.2.0",
+    "faker>=18.4.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.3.1",
+    "black>=23.3.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+]
