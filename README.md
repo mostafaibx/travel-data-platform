@@ -15,8 +15,6 @@ All data sources feed into a centralized cloud data warehouse that follows dimen
 
 ## Architecture
 
-![Data Platform Architecture](docs/images/architecture.png)
-
 The platform consists of several interconnected components:
 
 1. **Data Ingestion Layer**: 
