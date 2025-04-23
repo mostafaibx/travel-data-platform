@@ -1,12 +1,14 @@
 """
 Test fixtures for the scrapping_dest_details pipeline tests.
 """
+
 import pytest
 import pandas as pd
 from unittest.mock import MagicMock, patch
 from bs4 import BeautifulSoup
 import datetime
 import json
+
 
 @pytest.fixture
 def mock_soup():
@@ -49,7 +51,8 @@ def mock_soup():
     </body>
     </html>
     """
-    return BeautifulSoup(html, 'html.parser')
+    return BeautifulSoup(html, "html.parser")
+
 
 @pytest.fixture
 def mock_raw_data():
@@ -57,12 +60,13 @@ def mock_raw_data():
     Create mock raw data that would be returned by requests.get
     """
     return {
-        'url': 'https://en.wikipedia.org/wiki/Paris',
-        'status_code': 200,
-        'headers': {'Content-Type': 'text/html; charset=UTF-8'},
-        'content': '<html>...</html>',  # Abbreviated
-        'encoding': 'UTF-8'
+        "url": "https://en.wikipedia.org/wiki/Paris",
+        "status_code": 200,
+        "headers": {"Content-Type": "text/html; charset=UTF-8"},
+        "content": "<html>...</html>",  # Abbreviated
+        "encoding": "UTF-8",
     }
+
 
 @pytest.fixture
 def sample_destination_data():
@@ -71,40 +75,57 @@ def sample_destination_data():
     """
     return [
         {
-            'destination_name': 'Paris',
-            'description': 'Paris is the capital and most populous city of France.',
-            'coordinates': {'latitude': 48.8566, 'longitude': 2.3522},
-            'country': 'France',
-            'population': {'count': 2148271, 'year': 2020},
-            'timezone': 'UTC+1 (CET)',
-            'languages': ['French'],
-            'climate': 'Paris has a typical Western European oceanic climate.',
-            'image_url': 'https://upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg',
-            'sections': ['History', 'Geography', 'Climate', 'Landmarks'],
-            'attractions': [
-                {'name': 'Eiffel Tower', 'description': 'iconic tower completed in 1889', 'type': 'Landmark'},
-                {'name': 'Louvre Museum', 'description': 'world\'s most visited museum', 'type': 'Museum'}
+            "destination_name": "Paris",
+            "description": "Paris is the capital and most populous city of France.",
+            "coordinates": {"latitude": 48.8566, "longitude": 2.3522},
+            "country": "France",
+            "population": {"count": 2148271, "year": 2020},
+            "timezone": "UTC+1 (CET)",
+            "languages": ["French"],
+            "climate": "Paris has a typical Western European oceanic climate.",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg",
+            "sections": ["History", "Geography", "Climate", "Landmarks"],
+            "attractions": [
+                {
+                    "name": "Eiffel Tower",
+                    "description": "iconic tower completed in 1889",
+                    "type": "Landmark",
+                },
+                {
+                    "name": "Louvre Museum",
+                    "description": "world's most visited museum",
+                    "type": "Museum",
+                },
             ],
-            'ingestion_timestamp': datetime.datetime(2023, 5, 15, 12, 0, 0)
+            "ingestion_timestamp": datetime.datetime(2023, 5, 15, 12, 0, 0),
         },
         {
-            'destination_name': 'Rome',
-            'description': 'Rome is the capital city of Italy.',
-            'coordinates': {'latitude': 41.9028, 'longitude': 12.4964},
-            'country': 'Italy',
-            'population': {'count': 2872800, 'year': 2019},
-            'timezone': 'UTC+1 (CET)',
-            'languages': ['Italian'],
-            'climate': 'Rome has a Mediterranean climate.',
-            'image_url': 'https://example.com/rome.jpg',
-            'sections': ['History', 'Tourism', 'Culture'],
-            'attractions': [
-                {'name': 'Colosseum', 'description': 'ancient amphitheater', 'type': 'Landmark'},
-                {'name': 'Vatican Museums', 'description': 'art museums', 'type': 'Museum'}
+            "destination_name": "Rome",
+            "description": "Rome is the capital city of Italy.",
+            "coordinates": {"latitude": 41.9028, "longitude": 12.4964},
+            "country": "Italy",
+            "population": {"count": 2872800, "year": 2019},
+            "timezone": "UTC+1 (CET)",
+            "languages": ["Italian"],
+            "climate": "Rome has a Mediterranean climate.",
+            "image_url": "https://example.com/rome.jpg",
+            "sections": ["History", "Tourism", "Culture"],
+            "attractions": [
+                {
+                    "name": "Colosseum",
+                    "description": "ancient amphitheater",
+                    "type": "Landmark",
+                },
+                {
+                    "name": "Vatican Museums",
+                    "description": "art museums",
+                    "type": "Museum",
+                },
             ],
-            'ingestion_timestamp': datetime.datetime(2023, 5, 15, 12, 30, 0)
-        }
+            "ingestion_timestamp": datetime.datetime(2023, 5, 15, 12, 30, 0),
+        },
     ]
+
 
 @pytest.fixture
 def sample_processed_df():
@@ -113,29 +134,40 @@ def sample_processed_df():
     """
     data = [
         {
-            'destination_name': 'Paris',
-            'description': 'Paris is the capital and most populous city of France.',
-            'country': 'France',
-            'latitude': 48.8566,
-            'longitude': 2.3522,
-            'population_count': 2148271,
-            'population_year': 2020,
-            'timezone': 'UTC+1 (CET)',
-            'languages': json.dumps(['French']),
-            'climate': 'Paris has a typical Western European oceanic climate.',
-            'image_url': 'https://upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg',
-            'sections': json.dumps(['History', 'Geography', 'Climate', 'Landmarks']),
-            'area_km2': None,
-            'region': 'Île-de-France',
-            'attractions_count': 2,
-            'attractions': json.dumps([
-                {'name': 'Eiffel Tower', 'description': 'iconic tower completed in 1889', 'type': 'Landmark'},
-                {'name': 'Louvre Museum', 'description': 'world\'s most visited museum', 'type': 'Museum'}
-            ]),
-            'ingestion_timestamp': datetime.datetime(2023, 5, 15, 12, 0, 0)
+            "destination_name": "Paris",
+            "description": "Paris is the capital and most populous city of France.",
+            "country": "France",
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+            "population_count": 2148271,
+            "population_year": 2020,
+            "timezone": "UTC+1 (CET)",
+            "languages": json.dumps(["French"]),
+            "climate": "Paris has a typical Western European oceanic climate.",
+            "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg",
+            "sections": json.dumps(["History", "Geography", "Climate", "Landmarks"]),
+            "area_km2": None,
+            "region": "Île-de-France",
+            "attractions_count": 2,
+            "attractions": json.dumps(
+                [
+                    {
+                        "name": "Eiffel Tower",
+                        "description": "iconic tower completed in 1889",
+                        "type": "Landmark",
+                    },
+                    {
+                        "name": "Louvre Museum",
+                        "description": "world's most visited museum",
+                        "type": "Museum",
+                    },
+                ]
+            ),
+            "ingestion_timestamp": datetime.datetime(2023, 5, 15, 12, 0, 0),
         }
     ]
     return pd.DataFrame(data)
+
 
 @pytest.fixture
 def mock_requests_session():
@@ -146,10 +178,11 @@ def mock_requests_session():
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.text = "<html>...</html>"
-    mock_response.headers = {'Content-Type': 'text/html'}
-    mock_response.encoding = 'UTF-8'
+    mock_response.headers = {"Content-Type": "text/html"}
+    mock_response.encoding = "UTF-8"
     mock_session.get.return_value = mock_response
     return mock_session
+
 
 @pytest.fixture
 def mock_bq_loader():
@@ -158,4 +191,4 @@ def mock_bq_loader():
     """
     mock_loader = MagicMock()
     mock_loader.upload_with_merge.return_value = True
-    return mock_loader 
+    return mock_loader

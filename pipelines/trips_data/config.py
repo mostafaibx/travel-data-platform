@@ -25,9 +25,15 @@ TABLE_ID = os.getenv("BQ_TRIPS_TABLE_ID")
 BQ_TABLE_PATH = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 
 # Fake data generation settings
-BATCH_SIZE = int(os.getenv("TRIPS_BATCH_SIZE"))  # Number of new records to generate per day
-DATE_RANGE_FUTURE = int(os.getenv("TRIPS_DATE_RANGE_FUTURE"))  # Days into the future for trip dates
-PAST_DATE_RATIO = float(os.getenv("TRIPS_PAST_DATE_RATIO"))  # Percentage of trips with past start dates
+BATCH_SIZE = int(
+    os.getenv("TRIPS_BATCH_SIZE")
+)  # Number of new records to generate per day
+DATE_RANGE_FUTURE = int(
+    os.getenv("TRIPS_DATE_RANGE_FUTURE")
+)  # Days into the future for trip dates
+PAST_DATE_RATIO = float(
+    os.getenv("TRIPS_PAST_DATE_RATIO")
+)  # Percentage of trips with past start dates
 
 # Logging config
-LOG_LEVEL = os.getenv("TRIPS_LOG_LEVEL") 
+LOG_LEVEL = os.getenv("TRIPS_LOG_LEVEL")

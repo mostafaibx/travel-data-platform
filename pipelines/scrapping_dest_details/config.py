@@ -29,9 +29,9 @@ TRAVEL_DESTINATIONS = [
     "Cape Town",
     "Miami",
     "Cairo",
-    "Singapore"
+    "Singapore",
 ]
 
 # GCS Configuration
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "travel-data-raw")
-GCS_WIKI_RAW_PREFIX = "wikipedia_raw" 
+GCS_WIKI_RAW_PREFIX = "wikipedia_raw"

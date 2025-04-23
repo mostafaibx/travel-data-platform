@@ -9,4 +9,4 @@ It includes modules for:
 - Scheduling for periodic execution
 """
 
-__version__ = "0.1.0" 
+__version__ = "0.1.0"
