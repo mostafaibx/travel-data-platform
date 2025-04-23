@@ -1,7 +1,6 @@
 import os
 
 
-WEATHER_API_KEY = "55454a8d3a13e4d28301e18f43e0af1a"
 BASE_URL = "https://api.openweathermap.org/data/3.0/onecall"
 
 
