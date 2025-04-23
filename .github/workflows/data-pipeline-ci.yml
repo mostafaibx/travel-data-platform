@@ -72,14 +72,14 @@ jobs:
           python -m tests.run_tests --with-coverage --junit-xml=../../junit/scrapping_dest_details/test-results.xml --html-report=../../coverage-reports/scrapping_dest_details
           
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results
           path: junit/
           
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: success()
         with:
           name: coverage-reports
@@ -227,7 +227,7 @@ jobs:
           safety check
           
       - name: Upload security results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-results
           path: bandit-results.json 
