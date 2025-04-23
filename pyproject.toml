@@ -10,7 +10,8 @@ dependencies = [
     "google-cloud-bigquery>=3.11.4",
     "schedule>=1.2.0",
     "faker>=18.4.0",
-    "pyarrow>=19.0.1"
+    "pyarrow>=19.0.1",
+    "python-dotenv>=1.0.0"
 ]
 
 [build-system]
