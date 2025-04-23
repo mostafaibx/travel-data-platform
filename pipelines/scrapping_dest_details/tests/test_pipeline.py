@@ -9,8 +9,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from ..pipeline import (fetch_destinations_data, prepare_for_bigquery,
-                        run_pipeline)
+from ..pipeline import fetch_destinations_data, prepare_for_bigquery, run_pipeline
 
 
 @patch("pipelines.scrapping_dest_details.pipeline.get_destination_info")

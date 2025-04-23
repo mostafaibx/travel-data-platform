@@ -8,8 +8,7 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from .bigquery_loader import BigQueryLoader
-from .config import (BQ_TABLE_PATH, DATASET_ID, PROJECT_ID, TABLE_ID,
-                     TRAVEL_DESTINATIONS)
+from .config import BQ_TABLE_PATH, DATASET_ID, PROJECT_ID, TABLE_ID, TRAVEL_DESTINATIONS
 from .fetcher import get_destination_info
 from .gcs_storage import upload_processed_wiki_data, upload_raw_wiki_data
 
