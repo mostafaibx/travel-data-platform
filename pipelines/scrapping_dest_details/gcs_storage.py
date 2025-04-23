@@ -1,133 +1,110 @@
+"""
+Module for storing data in Google Cloud Storage.
+"""
+
+# Remove unused imports
 import datetime
 import json
-import logging
-import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from google.cloud import storage
 
-from .config import GCS_BUCKET_NAME, GCS_WIKI_RAW_PREFIX
-
-# Configure logging
-logger = logging.getLogger(__name__)
+# Configuration
+from .config import BUCKET_NAME
 
 
-def upload_raw_wiki_data(destination_name: str, raw_data: Dict[str, Any]) -> bool:
+def _get_storage_client():
     """
-    Upload raw Wikipedia data to Google Cloud Storage
-
-    Args:
-        destination_name: Name of the destination
-        raw_data: Raw Wikipedia data to upload
+    Get a Google Cloud Storage client
 
     Returns:
-        Boolean indicating success or failure
+        storage.Client: The GCS client
     """
-    if not raw_data:
-        logger.warning(f"No raw data to upload for {destination_name}")
-        return False
-
-    try:
-        # Create a storage client
-        storage_client = storage.Client()
-
-        # Get the bucket
-        bucket = storage_client.bucket(GCS_BUCKET_NAME)
-
-        # Create a timestamp for versioning
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        # Generate a blob name
-        safe_name = destination_name.replace(" ", "_").lower()
-        blob_name = f"{GCS_WIKI_RAW_PREFIX}/{safe_name}_{timestamp}.json"
-
-        # Create a new blob
-        blob = bucket.blob(blob_name)
-
-        # Filter content to prevent storing massive HTML content
-        upload_data = {
-            "url": raw_data.get("url", ""),
-            "status_code": raw_data.get("status_code", 0),
-            "headers": raw_data.get("headers", {}),
-            "encoding": raw_data.get("encoding", ""),
-            "content_length": (
-                len(raw_data.get("content", "")) if "content" in raw_data else 0
-            ),
-            "timestamp": timestamp,
-        }
-
-        # Save a separate blob with the full HTML content for archival purposes
-        if "content" in raw_data and raw_data["content"]:
-            content_blob_name = (
-                f"{GCS_WIKI_RAW_PREFIX}/{safe_name}_{timestamp}_full.html"
-            )
-            content_blob = bucket.blob(content_blob_name)
-            content_blob.upload_from_string(
-                raw_data["content"], content_type="text/html"
-            )
-            logger.info(f"Uploaded full HTML content to {content_blob_name}")
-
-            # Add reference to the full content blob
-            upload_data["full_content_blob"] = content_blob_name
-
-        # Upload the metadata as JSON
-        blob.upload_from_string(
-            json.dumps(upload_data, indent=2), content_type="application/json"
-        )
-
-        logger.info(
-            f"Successfully uploaded raw data for {destination_name} to {blob_name}"
-        )
-        return True
-
-    except Exception as e:
-        logger.error(f"Error uploading raw data to GCS for {destination_name}: {e}")
-        return False
+    return storage.Client()
 
 
-def upload_processed_wiki_data(destination_data: List[Dict[str, Any]]) -> bool:
+def _get_bucket():
     """
-    Upload processed Wikipedia data to Google Cloud Storage
-
-    Args:
-        destination_data: List of processed destination data
+    Get the GCS bucket for storing data
 
     Returns:
-        Boolean indicating success or failure
+        storage.Bucket: The GCS bucket
     """
-    if not destination_data:
-        logger.warning("No processed data to upload")
-        return False
+    client = _get_storage_client()
+    return client.bucket(BUCKET_NAME)
 
+
+def upload_raw_wiki_data(destination: str, data: Dict[str, Any]) -> bool:
+    """
+    Upload raw Wikipedia data for a destination to GCS
+
+    Args:
+        destination: The destination name
+        data: The raw data to upload
+
+    Returns:
+        bool: True if upload was successful, False otherwise
+    """
     try:
-        # Create a storage client
-        storage_client = storage.Client()
-
         # Get the bucket
-        bucket = storage_client.bucket(GCS_BUCKET_NAME)
+        bucket = _get_bucket()
 
-        # Create a timestamp for versioning
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Create a timestamp-based path for the data
+        now = datetime.datetime.now()
+        date_path = now.strftime("%Y/%m/%d")
+        timestamp = now.strftime("%Y%m%d_%H%M%S")
 
-        # Generate a blob name
-        blob_name = f"{GCS_WIKI_RAW_PREFIX}/processed/destinations_{timestamp}.json"
+        # Clean destination name for use in filename
+        clean_dest = destination.replace(" ", "_")
 
-        # Create a new blob
-        blob = bucket.blob(blob_name)
+        # Create the blob path
+        blob_path = f"raw/wiki/{date_path}/{clean_dest}_{timestamp}.json"
 
-        # Upload as JSON
+        # Get a blob object
+        blob = bucket.blob(blob_path)
+
+        # Upload the data as JSON
         blob.upload_from_string(
-            json.dumps(
-                destination_data, indent=2, default=str
-            ),  # default=str handles serialization of dates
+            json.dumps(data, ensure_ascii=False, default=str),
             content_type="application/json",
         )
 
-        logger.info(
-            f"Successfully uploaded processed data for {len(destination_data)} destinations to {blob_name}"
-        )
         return True
 
     except Exception as e:
-        logger.error(f"Error uploading processed data to GCS: {e}")
+        print(f"Error uploading raw wiki data for {destination}: {e}")
+        return False
+
+
+def upload_processed_wiki_data(data: List[Dict[str, Any]]) -> bool:
+    """
+    Upload processed Wikipedia data to GCS
+
+    Args:
+        data: The processed data to upload
+
+    Returns:
+        bool: True if upload was successful, False otherwise
+    """
+    try:
+        # Get the bucket
+        bucket = _get_bucket()
+
+        # Create a timestamp-based filename
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        blob_path = f"processed/wiki/destinations_{timestamp}.json"
+
+        # Get a blob object
+        blob = bucket.blob(blob_path)
+
+        # Upload the data as JSON, handling datetime objects
+        blob.upload_from_string(
+            json.dumps(data, ensure_ascii=False, default=str),
+            content_type="application/json",
+        )
+
+        return True
+
+    except Exception as e:
+        print(f"Error uploading processed wiki data: {e}")
         return False
