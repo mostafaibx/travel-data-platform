@@ -1,9 +1,16 @@
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
 
-WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
-BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
-GCP_PROJECT = os.getenv("GCP_PROJECT")
-BQ_DATASET = os.getenv("BQ_DATASET")
+WEATHER_API_KEY = "55454a8d3a13e4d28301e18f43e0af1a"
+BASE_URL = "https://api.openweathermap.org/data/3.0/onecall"
+
+
+# BigQuery settings
+PROJECT_ID = "travler-data-platform"
+DATASET_ID = "staging"
+TABLE_ID = "weather_data"
+BQ_TABLE_PATH = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
+
+# Cloud Storage settings
+BUCKET_NAME = "travel-data-platform-raw"
+WEATHER_RAW_PATH = "weather_data/raw"
