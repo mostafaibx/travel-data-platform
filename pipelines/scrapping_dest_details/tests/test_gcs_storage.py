@@ -6,8 +6,6 @@ import datetime
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from ..gcs_storage import (
     _get_bucket,
     _get_storage_client,

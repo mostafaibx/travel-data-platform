@@ -23,7 +23,7 @@ def mock_soup():
         <div id="mw-content-text">
             <div>
                 <p class="mw-empty-elt"></p>
-                <p>Paris is the capital and most populous city of France. With an estimated population of 2,148,271 residents, 
+                <p>Paris is the capital and most populous city of France. With an estimated population of 2,148,271 residents,
                 Paris is the fourth-most populated city in the European Union.</p>
                 <div class="infobox">
                     <table>
@@ -46,7 +46,7 @@ def mock_soup():
         <span id="Climate" class="mw-headline">Climate</span>
         <p>Paris has a typical Western European oceanic climate which is affected by the North Atlantic Current.</p>
         <div class="thumb">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg" 
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg"
                  alt="Paris skyline" />
         </div>
     </body>

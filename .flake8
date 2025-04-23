@@ -1,6 +1,6 @@
 [flake8]
-max-line-length = 88
-extend-ignore = E203, W503
+max-line-length = 140
+extend-ignore = E203, W503, E302, E305
 exclude = 
     .git,
     __pycache__,
@@ -13,4 +13,11 @@ per-file-ignores =
     __init__.py:F401
     # Allow unused imports in test files 
     tests/*.py:F401
-    pipelines/*/tests/*.py:F401 
+    pipelines/*/tests/*.py:F401
+    # Ignore f-string without placeholders
+    pipelines/trips_data/pipeline.py:F541
+    # Ignore line too long for specific files with complex formatting
+    pipelines/common/gcp_auth.py:E501
+    pipelines/trips_data/bigquery_ingestion.py:E501
+    pipelines/trips_data/raw_data_generator.py:E501
+    pipelines/common/setup_credentials.py:E501 

@@ -157,13 +157,13 @@ class BigQueryLoader:
         MERGE `{self.project_id}.{self.dataset_id}.{self.table_id}` AS target
         USING `{self.project_id}.{self.dataset_id}.{temp_table_id}` AS source
         ON target.destination_name = source.destination_name
-        
+
         WHEN MATCHED AND (
             {match_conditions}
         ) THEN
             UPDATE SET
                 {update_sets}
-        
+
         WHEN NOT MATCHED THEN
             INSERT (
                 {insert_columns}

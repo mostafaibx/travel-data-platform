@@ -19,16 +19,16 @@ os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
 # Original data file path
 ORIGINAL_DATA_FILE = BASE_DIR / "Travel details dataset.csv"
 
-# BigQuery settings
-PROJECT_ID = os.getenv("BQ_PROJECT_ID")
-DATASET_ID = os.getenv("BQ_STAGING_DATASET_ID")
+PROJECT_ID = "travler-data-platform"
+DATASET_ID = "staging"
+TABLE_ID = "trip_details"
 TABLE_ID = os.getenv("BQ_TRIPS_TABLE_ID")
 BQ_TABLE_PATH = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 
-# Fake data generation settings
-BATCH_SIZE = int(
-    os.getenv("TRIPS_BATCH_SIZE")
-)  # Number of new records to generate per day
+BATCH_SIZE = 20  # Number of new records to generate per day
+DATE_RANGE_FUTURE = 180  # Days into the future for trip dates
+PAST_DATE_RATIO = 0.3  # Percentage of trips with past start dates
+# Number of new records to generate per day
 DATE_RANGE_FUTURE = int(
     os.getenv("TRIPS_DATE_RANGE_FUTURE")
 )  # Days into the future for trip dates

@@ -6,7 +6,6 @@ import json
 from datetime import datetime
 
 import pandas as pd
-import pytest
 from great_expectations.dataset import PandasDataset
 
 from ..pipeline import prepare_for_bigquery

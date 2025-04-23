@@ -163,7 +163,7 @@ def verify_credentials(credentials: service_account.Credentials) -> bool:
         )
 
         # Make a simple API call
-        datasets = list(client.list_datasets(max_results=1))
+        _ = list(client.list_datasets(max_results=1))
 
         logger.info(
             f"Credentials verified successfully for project: {credentials.project_id}"

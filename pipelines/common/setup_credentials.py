@@ -10,9 +10,6 @@ import os
 import sys
 from pathlib import Path
 
-# Add the project root directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from pipelines.common.gcp_auth import (
     DEFAULT_KEY_FILENAME,
     DEFAULT_KEYS_DIR,
@@ -20,6 +17,9 @@ from pipelines.common.gcp_auth import (
     save_key_to_default_location,
     verify_credentials,
 )
+
+# Add the project root directory to the Python path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 
 def setup_credentials():
@@ -99,7 +99,8 @@ def setup_credentials():
             credentials = get_credentials()
             if verify_credentials(credentials):
                 print(
-                    f"✅ Credentials verified successfully for project: {credentials.project_id}"
+                    f"✅ Credentials verified successfully for project: "
+                    f"{credentials.project_id}"
                 )
             else:
                 print("❌ Credentials verification failed")

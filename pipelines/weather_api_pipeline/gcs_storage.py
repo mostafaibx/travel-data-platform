@@ -9,8 +9,9 @@ from .config import BUCKET_NAME, PROJECT_ID, WEATHER_RAW_PATH
 
 logger = logging.getLogger(__name__)
 
-
 # Custom JSON encoder to handle datetime objects
+
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.datetime, datetime.date)):

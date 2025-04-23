@@ -130,7 +130,7 @@ if __name__ == "__main__":
 
     # Print a summary
     if metrics["success"]:
-        print(f"Pipeline completed successfully!")
+        print("Pipeline completed successfully!")
         if generate:
             print(
                 f"Files generated: {metrics['files_generated']} (using {metrics['generation_method']} method)"

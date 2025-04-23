@@ -7,7 +7,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import pytest
 
 from ..pipeline import fetch_destinations_data, prepare_for_bigquery, run_pipeline
 

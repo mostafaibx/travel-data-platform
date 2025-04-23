@@ -1,9 +1,7 @@
 import logging
 import random
 from datetime import datetime, timedelta
-from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from faker import Faker
 from faker.providers import address, date_time, person
@@ -39,7 +37,7 @@ class FakerTravelDataGenerator:
         try:
             df_original = pd.read_csv(config.ORIGINAL_DATA_FILE)
             self.next_trip_id = df_original["Trip ID"].max() + 1
-        except:
+        except Exception:
             self.next_trip_id = 1000
 
         # Create common travel destinations

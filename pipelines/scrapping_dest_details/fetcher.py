@@ -307,7 +307,8 @@ class WikipediaScraper:
                     section_header = section.parent
                     attractions.extend(self._parse_attraction_list(section_header))
 
-            # If no dedicated section found, try looking for lists throughout the article
+            # If no dedicated section found, try looking for lists throughout the
+            # article
             if not attractions:
                 # Check if there's any "must-see" list in the page
                 for list_elem in soup.find_all(["ul", "ol"]):
@@ -528,6 +529,8 @@ class WikipediaScraper:
 
 
 # Function to get destination info
+
+
 def get_destination_info(
     destination: str,
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
