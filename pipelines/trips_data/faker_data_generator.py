@@ -1,11 +1,12 @@
-import pandas as pd
-import numpy as np
+import logging
 import random
 from datetime import datetime, timedelta
-import logging
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
 from faker import Faker
-from faker.providers import date_time, person, address
+from faker.providers import address, date_time, person
 
 from . import config
 

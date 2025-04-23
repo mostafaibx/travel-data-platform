@@ -1,9 +1,11 @@
+import datetime
 import json
 import logging
 import os
-import datetime
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 from google.cloud import storage
+
 from .config import GCS_BUCKET_NAME, GCS_WIKI_RAW_PREFIX
 
 # Configure logging

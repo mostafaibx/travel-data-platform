@@ -1,7 +1,9 @@
-import requests
-from typing import Dict, Optional, List, Any
 import logging
-from .config import WEATHER_API_KEY, BASE_URL
+from typing import Any, Dict, List, Optional
+
+import requests
+
+from .config import BASE_URL, WEATHER_API_KEY
 
 logger = logging.getLogger(__name__)
 

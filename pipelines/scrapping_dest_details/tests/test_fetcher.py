@@ -2,9 +2,11 @@
 Tests for the fetcher module in the scrapping_dest_details pipeline.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from bs4 import BeautifulSoup
+
 from ..fetcher import WikipediaScraper, get_destination_info
 
 

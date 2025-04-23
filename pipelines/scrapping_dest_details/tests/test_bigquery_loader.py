@@ -2,11 +2,13 @@
 Tests for the BigQuery loader module in the scrapping_dest_details pipeline.
 """
 
-import pytest
-import pandas as pd
-from unittest.mock import patch, MagicMock, call
-import tempfile
 import os
+import tempfile
+from unittest.mock import MagicMock, call, patch
+
+import pandas as pd
+import pytest
+
 from ..bigquery_loader import BigQueryLoader
 
 

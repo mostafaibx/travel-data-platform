@@ -2,12 +2,13 @@
 Test fixtures for the scrapping_dest_details pipeline tests.
 """
 
-import pytest
-import pandas as pd
-from unittest.mock import MagicMock, patch
-from bs4 import BeautifulSoup
 import datetime
 import json
+from unittest.mock import MagicMock, patch
+
+import pandas as pd
+import pytest
+from bs4 import BeautifulSoup
 
 
 @pytest.fixture

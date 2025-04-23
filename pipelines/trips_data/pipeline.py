@@ -2,11 +2,11 @@ import argparse
 import logging
 import time
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from . import config
-from .data_generator import generate_daily_data
 from .bigquery_ingestion import ingest_files_to_bigquery
+from .data_generator import generate_daily_data
 
 # Set up logging
 logging.basicConfig(

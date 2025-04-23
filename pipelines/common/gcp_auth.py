@@ -3,14 +3,14 @@ Google Cloud Platform authentication utilities.
 This module handles authentication with GCP services across all pipelines.
 """
 
-import os
 import json
 import logging
+import os
 from pathlib import Path
-from typing import Optional, Dict, Any, Union
+from typing import Any, Dict, Optional, Union
 
-from google.oauth2 import service_account
 from google.cloud import bigquery
+from google.oauth2 import service_account
 
 # Set up logging
 logging.basicConfig(

@@ -1,6 +1,7 @@
 import logging
-import pandas as pd
 from typing import List
+
+import pandas as pd
 from google.cloud import bigquery
 
 logger = logging.getLogger(__name__)

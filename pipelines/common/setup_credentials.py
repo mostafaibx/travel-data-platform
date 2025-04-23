@@ -4,22 +4,19 @@ Utility script to set up GCP credentials.
 This script helps users set up their GCP credentials for use with the travel data platform.
 """
 
+import argparse
+import json
 import os
 import sys
-import json
-import argparse
 from pathlib import Path
 
 # Add the project root directory to the Python path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from pipelines.common.gcp_auth import (
-    save_key_to_default_location,
-    get_credentials,
-    verify_credentials,
-    DEFAULT_KEYS_DIR,
-    DEFAULT_KEY_FILENAME,
-)
+from pipelines.common.gcp_auth import (DEFAULT_KEY_FILENAME, DEFAULT_KEYS_DIR,
+                                       get_credentials,
+                                       save_key_to_default_location,
+                                       verify_credentials)
 
 
 def setup_credentials():

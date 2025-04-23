@@ -2,11 +2,13 @@
 Tests for schema validation of the scrapping_dest_details pipeline outputs.
 """
 
-import pytest
-import pandas as pd
 import json
 from datetime import datetime
+
+import pandas as pd
+import pytest
 from great_expectations.dataset import PandasDataset
+
 from ..pipeline import prepare_for_bigquery
 
 

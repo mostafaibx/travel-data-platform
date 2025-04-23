@@ -1,9 +1,11 @@
-import requests
 import logging
 import re
 import time
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
 from bs4 import BeautifulSoup
+
 from .config import WIKIPEDIA_BASE_URL
 
 # Configure logging

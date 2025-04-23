@@ -1,9 +1,11 @@
+import datetime
 import json
 import logging
-import datetime
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from google.cloud import storage
-from .config import PROJECT_ID, BUCKET_NAME, WEATHER_RAW_PATH
+
+from .config import BUCKET_NAME, PROJECT_ID, WEATHER_RAW_PATH
 
 logger = logging.getLogger(__name__)
 

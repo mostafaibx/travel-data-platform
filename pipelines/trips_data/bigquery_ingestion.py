@@ -1,14 +1,16 @@
-import os
 import glob
 import logging
-from google.cloud import bigquery
-from google.api_core.exceptions import NotFound
-import pandas as pd
+import os
 from datetime import datetime
 from typing import Optional
 
-from . import config
+import pandas as pd
+from google.api_core.exceptions import NotFound
+from google.cloud import bigquery
+
 from pipelines.common.gcp_auth import get_bigquery_client
+
+from . import config
 
 # Set up logging
 logging.basicConfig(

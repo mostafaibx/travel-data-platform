@@ -1,11 +1,13 @@
+import datetime
 import logging
 import os
-import datetime
+from typing import Any, Dict, List, Tuple
+
 import pandas as pd
 from google.cloud import bigquery
-from typing import List, Dict, Any, Tuple
+
+from .config import BQ_TABLE_PATH, DATASET_ID, PROJECT_ID, TABLE_ID
 from .fetcher import get_weather_data
-from .config import PROJECT_ID, DATASET_ID, TABLE_ID, BQ_TABLE_PATH
 from .gcs_storage import upload_raw_data_to_gcs
 
 # Configure logging

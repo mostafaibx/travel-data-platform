@@ -6,8 +6,9 @@ This can be used locally or in CI/CD pipelines.
 import argparse
 import os
 import sys
-import pytest
+
 import coverage
+import pytest
 
 
 def main():

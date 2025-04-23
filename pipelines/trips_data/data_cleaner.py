@@ -1,10 +1,11 @@
-import pandas as pd
-import numpy as np
-import os
-import logging
-from pathlib import Path
 import glob
+import logging
+import os
 from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 from pipelines.trips_data import config
 

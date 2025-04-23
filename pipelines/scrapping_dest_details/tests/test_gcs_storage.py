@@ -2,16 +2,14 @@
 Tests for the GCS storage module in the scrapping_dest_details pipeline.
 """
 
-import pytest
-import json
-from unittest.mock import patch, MagicMock
 import datetime
-from ..gcs_storage import (
-    upload_raw_wiki_data,
-    upload_processed_wiki_data,
-    _get_storage_client,
-    _get_bucket,
-)
+import json
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from ..gcs_storage import (_get_bucket, _get_storage_client,
+                           upload_processed_wiki_data, upload_raw_wiki_data)
 
 
 @patch("pipelines.scrapping_dest_details.gcs_storage._get_bucket")
