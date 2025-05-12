@@ -6,10 +6,13 @@ import json
 from datetime import datetime
 
 import pandas as pd
+
 # Update Great Expectations import to use current version structure
 from great_expectations.core.expectation_suite import ExpectationSuite
 from great_expectations.core.batch import RuntimeBatchRequest
-from great_expectations.execution_engine.pandas_execution_engine import PandasExecutionEngine
+from great_expectations.execution_engine.pandas_execution_engine import (
+    PandasExecutionEngine,
+)
 
 from ..pipeline import prepare_for_bigquery
 
@@ -58,7 +61,7 @@ def test_bigquery_schema_validation(sample_processed_df):
     assert sample_processed_df["destination_name"].dtype == object  # string
     assert sample_processed_df["description"].dtype == object  # string
     assert sample_processed_df["country"].dtype == object  # string
-    
+
     # Check value constraints
     assert not sample_processed_df["destination_name"].isnull().any()
     assert not sample_processed_df["country"].isnull().any()
@@ -93,7 +96,11 @@ def test_data_transformation_consistency(sample_destination_data):
             assert len(dest_row["main_attractions"]) == len(dest["main_attractions"])
         else:
             # If stored as string (JSON), convert back
-            attractions = json.loads(dest_row["main_attractions"]) if isinstance(dest_row["main_attractions"], str) else dest_row["main_attractions"]
+            attractions = (
+                json.loads(dest_row["main_attractions"])
+                if isinstance(dest_row["main_attractions"], str)
+                else dest_row["main_attractions"]
+            )
             assert len(attractions) == len(dest["main_attractions"])
 
 
