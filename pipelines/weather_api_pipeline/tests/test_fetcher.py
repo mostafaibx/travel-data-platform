@@ -17,10 +17,10 @@ def fetcher_test():
     result = fetcher(city)
     assert isinstance(result, dict)
     assert "error" in result
-    assert result["error"] == "City not found" 
+    assert result["error"] == "City not found"
 
     # Test with an empty city name
-    city = "" 
+    city = ""
     result = fetcher(city)
     assert isinstance(result, dict)
     assert "error" in result
