@@ -59,11 +59,27 @@ jobs:
           pip install ".[dev,test]"
           
       - name: Run tests for all pipelines
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BQ_PROJECT_ID: test-project
+          BQ_STAGING_DATASET_ID: test_dataset
+          BQ_DESTINATION_DETAILS_TABLE_ID: test_destinations
+          GCS_BUCKET_NAME: test-bucket
+          GCS_WEATHER_BUCKET_NAME: test-weather-bucket
+          TESTING: "true"
         run: |
           mkdir -p junit
           pytest pipelines/ --junitxml=junit/test-results.xml
           
       - name: Run specific scrapping pipeline tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BQ_PROJECT_ID: test-project
+          BQ_STAGING_DATASET_ID: test_dataset
+          BQ_DESTINATION_DETAILS_TABLE_ID: test_destinations
+          GCS_BUCKET_NAME: test-bucket
+          GCS_WEATHER_BUCKET_NAME: test-weather-bucket
+          TESTING: "true"
         run: |
           mkdir -p junit/scrapping_dest_details
           mkdir -p coverage-reports/scrapping_dest_details
@@ -102,6 +118,14 @@ jobs:
           pip install ".[dev,test]"
           
       - name: Validate scrapping pipeline schemas
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          BQ_PROJECT_ID: test-project
+          BQ_STAGING_DATASET_ID: test_dataset
+          BQ_DESTINATION_DETAILS_TABLE_ID: test_destinations
+          GCS_BUCKET_NAME: test-bucket
+          GCS_WEATHER_BUCKET_NAME: test-weather-bucket
+          TESTING: "true"
         run: |
           cd pipelines/scrapping_dest_details
           python -m pytest tests/test_schema_validation.py -v
@@ -145,6 +169,13 @@ jobs:
       - name: Run scrapping pipeline in dry-run mode
         env:
           DRY_RUN: "true"
+          PYTHONPATH: ${{ github.workspace }}
+          BQ_PROJECT_ID: test-project
+          BQ_STAGING_DATASET_ID: test_dataset
+          BQ_DESTINATION_DETAILS_TABLE_ID: test_destinations
+          GCS_BUCKET_NAME: test-bucket
+          GCS_WEATHER_BUCKET_NAME: test-weather-bucket
+          TESTING: "true"
         run: |
           # Mock the config to use test files
           cat > pipelines/scrapping_dest_details/tests/dry_run_config.py << EOL

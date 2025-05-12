@@ -149,7 +149,7 @@ def test_get_storage_client(mock_client_class):
 
 
 @patch("pipelines.scrapping_dest_details.gcs_storage._get_storage_client")
-@patch("pipelines.scrapping_dest_details.gcs_storage.BUCKET_NAME", "test-bucket")
+@patch("pipelines.scrapping_dest_details.gcs_storage.GCS_BUCKET_NAME", "test-bucket")
 def test_get_bucket(mock_get_client):
     """Test getting a GCS bucket"""
     # Set up mock

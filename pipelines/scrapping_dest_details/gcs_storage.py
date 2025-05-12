@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 from google.cloud import storage
 
 # Configuration
-from .config import BUCKET_NAME
+from .config import GCS_BUCKET_NAME
 
 
 def _get_storage_client():
@@ -31,7 +31,7 @@ def _get_bucket():
         storage.Bucket: The GCS bucket
     """
     client = _get_storage_client()
-    return client.bucket(BUCKET_NAME)
+    return client.bucket(GCS_BUCKET_NAME)
 
 
 def upload_raw_wiki_data(destination: str, data: Dict[str, Any]) -> bool:
