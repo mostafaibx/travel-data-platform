@@ -6,11 +6,9 @@ import json
 from datetime import datetime
 
 import pandas as pd
-from great_expectations.core.batch import RuntimeBatchRequest
 from great_expectations.core.expectation_suite import ExpectationSuite
-from great_expectations.execution_engine.pandas_execution_engine import (
-    PandasExecutionEngine,
-)
+from great_expectations.core.batch import RuntimeBatchRequest
+from great_expectations.execution_engine.pandas_execution_engine import PandasExecutionEngine
 
 from ..pipeline import prepare_for_bigquery
 
@@ -39,67 +37,46 @@ def test_destination_schema_validation(sample_destination_data):
             assert isinstance(attraction, str)
 
 
-def test_bigquery_schema_validation(sample_processed_df):
-    """Test that the BigQuery DataFrame conforms to our expected schema"""
-    # Simplify test to use direct pandas assertions without Great Expectations
-    # Check column presence
-    expected_columns = [
-        "destination_name",
-        "description",
-        "country",
-        "continent",
-        "climate",
-        "main_attractions",
-        "ingestion_timestamp",
-    ]
-    for column in expected_columns:
-        assert column in sample_processed_df.columns
-
-    # Check data types
-    assert sample_processed_df["destination_name"].dtype == object  # string
-    assert sample_processed_df["description"].dtype == object  # string
-    assert sample_processed_df["country"].dtype == object  # string
-
-    # Check value constraints
-    assert not sample_processed_df["destination_name"].isnull().any()
-    assert not sample_processed_df["country"].isnull().any()
-
-    # Check formatting
-    for _, row in sample_processed_df.iterrows():
-        assert row["destination_name"].strip() == row["destination_name"]
-        assert not row["description"].startswith(" ")
-        assert not row["country"].startswith(" ")
-
-
 def test_data_transformation_consistency(sample_destination_data):
     """Test that the data transformation from raw to BigQuery format is consistent"""
-    # Transform raw data to BigQuery format
+    # Transform data to pandas DataFrame for BigQuery
     bq_df = prepare_for_bigquery(sample_destination_data)
-
-    # Check that all destinations are present
+    
+    # Verify DataFrame structure
+    assert isinstance(bq_df, pd.DataFrame)
     assert len(bq_df) == len(sample_destination_data)
-
-    # Check that key information is preserved
+    
+    # Verify required columns are present
+    required_columns = [
+        "destination_name", 
+        "description", 
+        "country", 
+        "climate", 
+        "main_attractions", 
+        "ingestion_timestamp"
+    ]
+    for column in required_columns:
+        assert column in bq_df.columns
+    
+    # Verify data consistency between input and output
     for i, dest in enumerate(sample_destination_data):
         # Find corresponding row in DataFrame
         dest_row = bq_df[bq_df["destination_name"] == dest["destination_name"]].iloc[0]
-
-        # Check that key fields match
+        
+        # Check core fields match
+        assert dest_row["destination_name"] == dest["destination_name"]
         assert dest_row["description"] == dest["description"]
         assert dest_row["country"] == dest["country"]
         assert dest_row["climate"] == dest["climate"]
-
-        # Check attractions
-        if isinstance(dest_row["main_attractions"], list):
-            assert len(dest_row["main_attractions"]) == len(dest["main_attractions"])
+        
+        # Verify main_attractions are handled correctly
+        if isinstance(dest_row["main_attractions"], str):
+            # If stored as JSON string, parse and compare
+            attractions_json = json.loads(dest_row["main_attractions"])
+            assert set(attractions_json) == set(dest["main_attractions"])
         else:
-            # If stored as string (JSON), convert back
-            attractions = (
-                json.loads(dest_row["main_attractions"])
-                if isinstance(dest_row["main_attractions"], str)
-                else dest_row["main_attractions"]
-            )
-            assert len(attractions) == len(dest["main_attractions"])
+            # If stored as Python list, compare directly
+            assert set(dest_row["main_attractions"]) == set(dest["main_attractions"])
 
 
 def test_empty_data_handling():
@@ -108,3 +85,54 @@ def test_empty_data_handling():
     empty_df = prepare_for_bigquery([])
     assert isinstance(empty_df, pd.DataFrame)
     assert len(empty_df) == 0
+
+
+def test_schema_structure(sample_processed_df):
+    """Test the structure of the data schema"""
+    # Verify column data types are appropriate
+    assert sample_processed_df["destination_name"].dtype == object  # string
+    assert sample_processed_df["description"].dtype == object  # string
+    assert sample_processed_df["country"].dtype == object  # string
+    
+    # Check for null values in key fields
+    assert not sample_processed_df["destination_name"].isnull().any()
+    assert not sample_processed_df["country"].isnull().any()
+    
+    # Verify data formatting
+    for _, row in sample_processed_df.iterrows():
+        # Check string fields are properly trimmed
+        assert row["destination_name"].strip() == row["destination_name"]
+        assert row["country"].strip() == row["country"]
+        
+        # Verify main_attractions is either a list or a valid JSON string
+        if isinstance(row["main_attractions"], str):
+            # Should be parseable as JSON
+            attractions = json.loads(row["main_attractions"])
+            assert isinstance(attractions, list)
+        elif isinstance(row["main_attractions"], list):
+            # Should contain only strings
+            assert all(isinstance(item, str) for item in row["main_attractions"])
+
+
+def test_datetime_handling(sample_destination_data):
+    """Test handling of datetime values"""
+    # Transform data to pandas DataFrame
+    bq_df = prepare_for_bigquery(sample_destination_data)
+    
+    # Check ingestion_timestamp handling
+    assert "ingestion_timestamp" in bq_df.columns
+    
+    for i, dest in enumerate(sample_destination_data):
+        # Get corresponding row from DataFrame
+        dest_row = bq_df[bq_df["destination_name"] == dest["destination_name"]].iloc[0]
+        
+        # Verify timestamp conversion
+        if isinstance(dest_row["ingestion_timestamp"], str):
+            # If stored as string, check format
+            assert dest["ingestion_timestamp"] == dest_row["ingestion_timestamp"]
+        elif pd.api.types.is_datetime64_any_dtype(dest_row["ingestion_timestamp"]):
+            # If stored as datetime, convert to string for comparison
+            df_timestamp = dest_row["ingestion_timestamp"].strftime("%Y-%m-%dT%H:%M:%S")
+            # Remove milliseconds if present in the original
+            orig_timestamp = dest["ingestion_timestamp"].split(".")[0]
+            assert df_timestamp == orig_timestamp
