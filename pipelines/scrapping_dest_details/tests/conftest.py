@@ -20,25 +20,44 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 def mock_config():
     """Mock the config module for all tests"""
     from . import config_test
-    
+
     # Create patches for imported config values
     patches = [
-        patch("pipelines.scrapping_dest_details.config.PROJECT_ID", config_test.PROJECT_ID),
-        patch("pipelines.scrapping_dest_details.config.DATASET_ID", config_test.DATASET_ID),
+        patch(
+            "pipelines.scrapping_dest_details.config.PROJECT_ID", config_test.PROJECT_ID
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.DATASET_ID", config_test.DATASET_ID
+        ),
         patch("pipelines.scrapping_dest_details.config.TABLE_ID", config_test.TABLE_ID),
-        patch("pipelines.scrapping_dest_details.config.BQ_TABLE_PATH", config_test.BQ_TABLE_PATH),
-        patch("pipelines.scrapping_dest_details.config.WIKIPEDIA_BASE_URL", config_test.WIKIPEDIA_BASE_URL),
-        patch("pipelines.scrapping_dest_details.config.TRAVEL_DESTINATIONS", config_test.TRAVEL_DESTINATIONS),
-        patch("pipelines.scrapping_dest_details.config.GCS_BUCKET_NAME", config_test.GCS_BUCKET_NAME),
-        patch("pipelines.scrapping_dest_details.config.GCS_WIKI_RAW_PREFIX", config_test.GCS_WIKI_RAW_PREFIX),
+        patch(
+            "pipelines.scrapping_dest_details.config.BQ_TABLE_PATH",
+            config_test.BQ_TABLE_PATH,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.WIKIPEDIA_BASE_URL",
+            config_test.WIKIPEDIA_BASE_URL,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.TRAVEL_DESTINATIONS",
+            config_test.TRAVEL_DESTINATIONS,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.GCS_BUCKET_NAME",
+            config_test.GCS_BUCKET_NAME,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.GCS_WIKI_RAW_PREFIX",
+            config_test.GCS_WIKI_RAW_PREFIX,
+        ),
     ]
-    
+
     # Start all patches
     for p in patches:
         p.start()
-    
+
     yield
-    
+
     # Stop all patches after tests are done
     for p in patches:
         p.stop()
@@ -135,12 +154,12 @@ def sample_processed_df(sample_destination_data):
     """Sample pandas DataFrame for testing BigQuery loading"""
     # Convert the list of dictionaries to a DataFrame
     df = pd.DataFrame(sample_destination_data)
-    
+
     # Ensure the DataFrame has the expected columns for testing
     if "main_attractions" in df.columns:
         # Convert lists to strings for testing
         df["main_attractions"] = df["main_attractions"].apply(json.dumps)
-    
+
     return df
 
 
@@ -148,19 +167,19 @@ def sample_processed_df(sample_destination_data):
 def mock_bigquery_client():
     """Mock BigQuery client for testing"""
     client = MagicMock()
-    
+
     # Mock dataset methods
     mock_dataset = MagicMock()
     client.dataset.return_value = mock_dataset
-    
+
     # Mock table methods
     mock_table = MagicMock()
     mock_dataset.table.return_value = mock_table
-    
+
     # Mock get_dataset and get_table methods
     client.get_dataset.return_value = mock_dataset
     client.get_table.return_value = mock_table
-    
+
     return client
 
 
@@ -168,13 +187,13 @@ def mock_bigquery_client():
 def mock_storage_client():
     """Mock Storage client for testing"""
     client = MagicMock()
-    
+
     # Mock bucket methods
     mock_bucket = MagicMock()
     client.bucket.return_value = mock_bucket
-    
+
     # Mock blob methods
     mock_blob = MagicMock()
     mock_bucket.blob.return_value = mock_blob
-    
+
     return client

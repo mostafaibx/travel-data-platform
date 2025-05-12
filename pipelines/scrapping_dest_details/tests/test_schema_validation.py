@@ -6,9 +6,11 @@ import json
 from datetime import datetime
 
 import pandas as pd
-from great_expectations.core.expectation_suite import ExpectationSuite
 from great_expectations.core.batch import RuntimeBatchRequest
-from great_expectations.execution_engine.pandas_execution_engine import PandasExecutionEngine
+from great_expectations.core.expectation_suite import ExpectationSuite
+from great_expectations.execution_engine.pandas_execution_engine import (
+    PandasExecutionEngine,
+)
 
 from ..pipeline import prepare_for_bigquery
 
@@ -41,34 +43,34 @@ def test_data_transformation_consistency(sample_destination_data):
     """Test that the data transformation from raw to BigQuery format is consistent"""
     # Transform data to pandas DataFrame for BigQuery
     bq_df = prepare_for_bigquery(sample_destination_data)
-    
+
     # Verify DataFrame structure
     assert isinstance(bq_df, pd.DataFrame)
     assert len(bq_df) == len(sample_destination_data)
-    
+
     # Verify required columns are present
     required_columns = [
-        "destination_name", 
-        "description", 
-        "country", 
-        "climate", 
-        "main_attractions", 
-        "ingestion_timestamp"
+        "destination_name",
+        "description",
+        "country",
+        "climate",
+        "main_attractions",
+        "ingestion_timestamp",
     ]
     for column in required_columns:
         assert column in bq_df.columns
-    
+
     # Verify data consistency between input and output
     for i, dest in enumerate(sample_destination_data):
         # Find corresponding row in DataFrame
         dest_row = bq_df[bq_df["destination_name"] == dest["destination_name"]].iloc[0]
-        
+
         # Check core fields match
         assert dest_row["destination_name"] == dest["destination_name"]
         assert dest_row["description"] == dest["description"]
         assert dest_row["country"] == dest["country"]
         assert dest_row["climate"] == dest["climate"]
-        
+
         # Verify main_attractions are handled correctly
         if isinstance(dest_row["main_attractions"], str):
             # If stored as JSON string, parse and compare
@@ -93,17 +95,17 @@ def test_schema_structure(sample_processed_df):
     assert sample_processed_df["destination_name"].dtype == object  # string
     assert sample_processed_df["description"].dtype == object  # string
     assert sample_processed_df["country"].dtype == object  # string
-    
+
     # Check for null values in key fields
     assert not sample_processed_df["destination_name"].isnull().any()
     assert not sample_processed_df["country"].isnull().any()
-    
+
     # Verify data formatting
     for _, row in sample_processed_df.iterrows():
         # Check string fields are properly trimmed
         assert row["destination_name"].strip() == row["destination_name"]
         assert row["country"].strip() == row["country"]
-        
+
         # Verify main_attractions is either a list or a valid JSON string
         if isinstance(row["main_attractions"], str):
             # Should be parseable as JSON
@@ -118,14 +120,14 @@ def test_datetime_handling(sample_destination_data):
     """Test handling of datetime values"""
     # Transform data to pandas DataFrame
     bq_df = prepare_for_bigquery(sample_destination_data)
-    
+
     # Check ingestion_timestamp handling
     assert "ingestion_timestamp" in bq_df.columns
-    
+
     for i, dest in enumerate(sample_destination_data):
         # Get corresponding row from DataFrame
         dest_row = bq_df[bq_df["destination_name"] == dest["destination_name"]].iloc[0]
-        
+
         # Verify timestamp conversion
         if isinstance(dest_row["ingestion_timestamp"], str):
             # If stored as string, check format
