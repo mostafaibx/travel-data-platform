@@ -57,7 +57,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ".[dev]"
-          pip install coverage pytest-cov great_expectations
+          pip install coverage pytest-cov great_expectations bs4
           
       - name: Run tests for all pipelines
         run: |
@@ -101,7 +101,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ".[dev]"
-          pip install pandas great_expectations
+          pip install pandas great_expectations bs4
           
       - name: Validate scrapping pipeline schemas
         run: |
@@ -136,6 +136,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ".[dev]"
+          pip install bs4
           
       - name: Create mock environment
         run: |
