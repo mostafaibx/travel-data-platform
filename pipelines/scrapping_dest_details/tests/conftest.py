@@ -20,25 +20,44 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 def mock_config():
     """Mock the config module for all tests"""
     from . import config_test
-    
+
     # Create patches for imported config values
     patches = [
-        patch("pipelines.scrapping_dest_details.config.PROJECT_ID", config_test.PROJECT_ID),
-        patch("pipelines.scrapping_dest_details.config.DATASET_ID", config_test.DATASET_ID),
+        patch(
+            "pipelines.scrapping_dest_details.config.PROJECT_ID", config_test.PROJECT_ID
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.DATASET_ID", config_test.DATASET_ID
+        ),
         patch("pipelines.scrapping_dest_details.config.TABLE_ID", config_test.TABLE_ID),
-        patch("pipelines.scrapping_dest_details.config.BQ_TABLE_PATH", config_test.BQ_TABLE_PATH),
-        patch("pipelines.scrapping_dest_details.config.WIKIPEDIA_BASE_URL", config_test.WIKIPEDIA_BASE_URL),
-        patch("pipelines.scrapping_dest_details.config.TRAVEL_DESTINATIONS", config_test.TRAVEL_DESTINATIONS),
-        patch("pipelines.scrapping_dest_details.config.GCS_BUCKET_NAME", config_test.GCS_BUCKET_NAME),
-        patch("pipelines.scrapping_dest_details.config.GCS_WIKI_RAW_PREFIX", config_test.GCS_WIKI_RAW_PREFIX),
+        patch(
+            "pipelines.scrapping_dest_details.config.BQ_TABLE_PATH",
+            config_test.BQ_TABLE_PATH,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.WIKIPEDIA_BASE_URL",
+            config_test.WIKIPEDIA_BASE_URL,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.TRAVEL_DESTINATIONS",
+            config_test.TRAVEL_DESTINATIONS,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.GCS_BUCKET_NAME",
+            config_test.GCS_BUCKET_NAME,
+        ),
+        patch(
+            "pipelines.scrapping_dest_details.config.GCS_WIKI_RAW_PREFIX",
+            config_test.GCS_WIKI_RAW_PREFIX,
+        ),
     ]
-    
+
     # Start all patches
     for p in patches:
         p.start()
-    
+
     yield
-    
+
     # Stop all patches after tests are done
     for p in patches:
         p.stop()

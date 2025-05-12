@@ -15,4 +15,4 @@ TRAVEL_DESTINATIONS = ["Paris", "Rome", "New York"]
 # Mock GCS Configuration
 BUCKET_NAME = "test-bucket"
 GCS_BUCKET_NAME = "test-bucket"
-GCS_WIKI_RAW_PREFIX = "wikipedia_raw" 
+GCS_WIKI_RAW_PREFIX = "wikipedia_raw"

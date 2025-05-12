@@ -143,6 +143,82 @@ data-engineering-portfolio/
 └── main.py                       # CLI entry point
 ```
 
+## Testing Strategy
+
+This project follows a comprehensive testing strategy to ensure pipeline reliability and code quality:
+
+### Unit Testing
+
+1. **Mock-based testing**: All external dependencies (GCP services, APIs) are mocked during testing
+   - Uses Python's `unittest.mock` to replace real service clients
+   - Custom mock fixtures in `conftest.py` files
+   - No actual cloud resources are accessed during tests
+
+2. **Configuration isolation**:
+   - Separate test configuration in `config_test.py` files
+   - Environment variables override production values in test environment
+   - `TESTING=true` flag triggers test-specific code paths
+
+3. **Fixtures and test data**:
+   - Standardized test fixtures provide consistent test data
+   - Sample datasets for each pipeline to ensure predictable results
+
+### Integration Testing
+
+1. **Dry run mode**: Pipelines can be executed in dry-run mode to validate logic without external dependencies
+2. **Schema validation**: Tests validate that output schemas match expected structure
+3. **Data validation**: Tests for data quality, transformations, and business logic
+
+### Test Structure
+
+Each pipeline module has its own test suite:
+
+```
+pipelines/pipeline_name/
+├── tests/
+│   ├── conftest.py              # Test fixtures and configuration
+│   ├── config_test.py           # Test-specific configuration values
+│   ├── test_fetcher.py          # Tests for data fetching components
+│   ├── test_transformer.py      # Tests for data transformation components
+│   └── run_tests.py             # Test runner with coverage reporting
+```
+
+## CI/CD Implementation
+
+The project uses GitHub Actions for continuous integration and delivery:
+
+### CI Workflow (.github/workflows/data-pipeline-ci.yml)
+
+1. **Dependency Management**:
+   - All dependencies are defined in `pyproject.toml` under appropriate extras
+   - CI workflow installs with `pip install ".[dev,test]"` to ensure consistency
+   - No individual package installations in CI steps
+
+2. **Pipeline Testing Stages**:
+   - **Linting**: Code style and quality checks (black, isort, flake8)
+   - **Unit Testing**: Testing of all pipeline components
+   - **Data Validation**: Validation of data schemas and transformations
+   - **Dry Run**: Test pipeline execution without external dependencies
+   - **Security Scanning**: Checks for vulnerabilities and security issues
+
+3. **Test Environment**:
+   - Environment variables provide mock config values
+   - PYTHONPATH configuration ensures proper imports
+   - Testing flag enables mock implementations of external services
+
+4. **Artifacts**:
+   - Test results published as JUnit XML
+   - Coverage reports generated and published
+   - Security scan results published for review
+
+### Benefits
+
+This CI/CD approach ensures:
+- Consistent testing across all environments
+- No dependency on external resources during testing
+- Fast feedback on code quality and functionality
+- Comprehensive validation before merging to main branches
+
 ## Learning Outcomes
 
 This portfolio demonstrates competency in:
