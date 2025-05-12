@@ -6,10 +6,8 @@ import json
 from datetime import datetime
 
 import pandas as pd
-
-# Update Great Expectations import to use current version structure
-from great_expectations.core.expectation_suite import ExpectationSuite
 from great_expectations.core.batch import RuntimeBatchRequest
+from great_expectations.core.expectation_suite import ExpectationSuite
 from great_expectations.execution_engine.pandas_execution_engine import (
     PandasExecutionEngine,
 )
