@@ -1,90 +1,62 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
-Script to run all tests for the scrapping_dest_details pipeline.
-This can be used locally or in CI/CD pipelines.
+Test runner for the scrapping_dest_details pipeline.
+Used by the CI pipeline and can be run locally.
 """
 import argparse
 import os
 import sys
 
-import coverage
 import pytest
 
 
 def main():
-    """
-    Run the test suite with or without coverage reporting.
-    """
-    parser = argparse.ArgumentParser(
-        description="Run tests for scrapping_dest_details pipeline"
-    )
+    parser = argparse.ArgumentParser(description="Run tests for the scrapping pipeline")
     parser.add_argument(
-        "--with-coverage", action="store_true", help="Run with coverage reporting"
+        "--with-coverage", action="store_true", help="Run with coverage"
     )
-    parser.add_argument("--junit-xml", help="Output JUnit XML report to the given file")
-    parser.add_argument(
-        "--html-report", help="Output HTML coverage report to the given directory"
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Run with verbose output"
-    )
+    parser.add_argument("--junit-xml", help="Path to output JUnit XML report")
+    parser.add_argument("--html-report", help="Path to output HTML coverage report")
     args = parser.parse_args()
 
-    # Change to the directory of this script
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-    # Set up pytest arguments
-    pytest_args = []
-
-    if args.verbose:
-        pytest_args.append("-v")
-
-    if args.junit_xml:
-        pytest_args.extend(["--junitxml", args.junit_xml])
-
-    # Add all test files
-    pytest_args.extend(
-        [
-            "test_fetcher.py",
-            "test_pipeline.py",
-            "test_gcs_storage.py",
-            "test_bigquery_loader.py",
-            "test_schema_validation.py",
-        ]
+    # Set environment variables for testing
+    os.environ["TESTING"] = "true"
+    os.environ["BQ_PROJECT_ID"] = os.environ.get("BQ_PROJECT_ID", "test-project")
+    os.environ["BQ_STAGING_DATASET_ID"] = os.environ.get(
+        "BQ_STAGING_DATASET_ID", "test_dataset"
+    )
+    os.environ["BQ_DESTINATION_DETAILS_TABLE_ID"] = os.environ.get(
+        "BQ_DESTINATION_DETAILS_TABLE_ID", "test_destinations"
+    )
+    os.environ["GCS_BUCKET_NAME"] = os.environ.get("GCS_BUCKET_NAME", "test-bucket")
+    os.environ["GCS_WEATHER_BUCKET_NAME"] = os.environ.get(
+        "GCS_WEATHER_BUCKET_NAME", "test-weather-bucket"
     )
 
+    # Construct pytest arguments
+    pytest_args = ["-v"]
+
     if args.with_coverage:
-        # Run with coverage
-        cov = coverage.Coverage(
-            source=["../"],
-            omit=[
-                "../tests/*",
-                "*/__pycache__/*",
-                "*/venv/*",
-                "*/.venv/*",
-            ],
+        pytest_args.extend(
+            [
+                "--cov=.",
+                "--cov-report=term",
+            ]
         )
-        cov.start()
-
-        exit_code = pytest.main(pytest_args)
-
-        cov.stop()
-        cov.save()
-
-        # Print coverage report to console
-        print("\nCoverage Report:")
-        cov.report()
-
-        # Generate HTML report if requested
         if args.html_report:
-            cov.html_report(directory=args.html_report)
-            print(f"\nHTML coverage report saved to: {args.html_report}")
+            pytest_args.append(f"--cov-report=html:{args.html_report}")
 
-    else:
-        # Run without coverage
-        exit_code = pytest.main(pytest_args)
+    if args.junit_xml:
+        pytest_args.append(f"--junitxml={args.junit_xml}")
 
-    sys.exit(exit_code)
+    # Add the current directory to discover tests
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    pytest_args.append(current_dir)
+
+    print(f"Running tests with arguments: {pytest_args}")
+    result = pytest.main(pytest_args)
+
+    sys.exit(result)
 
 
 if __name__ == "__main__":

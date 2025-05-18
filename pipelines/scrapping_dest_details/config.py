@@ -36,3 +36,18 @@ TRAVEL_DESTINATIONS = [
 # GCS Configuration
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "travel-data-raw")
 GCS_WIKI_RAW_PREFIX = "wikipedia_raw"
+
+# Schema definitions for validation
+SCHEMAS = {
+    "destination_details": {
+        "destination": {"type": "STRING", "mode": "REQUIRED"},
+        "country": {"type": "STRING", "mode": "REQUIRED"},
+        "description": {"type": "STRING", "mode": "REQUIRED"},
+        "attractions": {"type": "RECORD", "mode": "REPEATED"},
+        "rating": {"type": "FLOAT", "mode": "NULLABLE"},
+        "reviews_count": {"type": "INTEGER", "mode": "NULLABLE"},
+        "weather": {"type": "RECORD", "mode": "NULLABLE"},
+        "has_beaches": {"type": "BOOLEAN", "mode": "NULLABLE"},
+        "updated_at": {"type": "TIMESTAMP", "mode": "NULLABLE"},
+    }
+}

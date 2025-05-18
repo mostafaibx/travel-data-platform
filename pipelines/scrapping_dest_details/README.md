@@ -227,6 +227,79 @@ The pipeline uses Python's logging module with structured logging:
 - ERROR for failures
 - DEBUG for detailed troubleshooting
 
+## Testing
+
+The pipeline includes comprehensive tests to ensure data quality, reliability, and robustness.
+
+### Test Structure
+
+Tests are organized by module:
+
+- **test_fetcher.py**: Validates the Wikipedia scraping functionality
+- **test_gcs_storage.py**: Tests the GCS storage operations
+- **test_bigquery_loader.py**: Verifies BigQuery loading operations
+- **test_pipeline.py**: Tests the main pipeline integration
+- **test_data_quality.py**: Ensures data meets quality standards
+
+### Testing Best Practices
+
+The test suite follows data engineering best practices:
+
+1. **Modular Testing**: Each component has isolated tests
+2. **Mocking External Services**: GCS and BigQuery operations are mocked
+3. **Test Data**: Mock HTML and sample data fixtures for consistent tests
+4. **Data Quality Validation**: Explicit tests for data integrity
+5. **Edge Cases**: Tests handle empty data, invalid inputs, and special characters
+6. **Integration Testing**: Verifies components work together correctly
+
+### Running Tests
+
+Install development dependencies:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Run the test suite:
+
+```bash
+pytest pipelines/scrapping_dest_details/tests/
+```
+
+Run with coverage:
+
+```bash
+pytest --cov=pipelines.scrapping_dest_details pipelines/scrapping_dest_details/tests/
+```
+
+### Continuous Integration
+
+We recommend integrating these tests into your CI/CD pipeline to ensure code changes don't break functionality.
+
+## Development
+
+For development:
+
+1. Install development dependencies:
+   ```bash
+   pip install -r requirements-dev.txt
+   ```
+
+2. Format code with Black:
+   ```bash
+   black pipelines/
+   ```
+
+3. Run linting:
+   ```bash
+   flake8 pipelines/
+   ```
+
+4. Run type checking:
+   ```bash
+   mypy pipelines/
+   ```
+
 ## Future Enhancements
 
 Potential improvements:

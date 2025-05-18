@@ -1,199 +1,184 @@
+#!/usr/bin/env python3
 """
-Pytest configuration and fixtures for scraping destination details tests.
+Pytest configuration for the scrapping_dest_details tests.
 """
-
-import datetime
 import json
 import os
-import sys
 from unittest.mock import MagicMock, patch
 
-import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-# Add the test directory to the sys.path to make imports work
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
+@pytest.fixture
+def wikipedia_scraper():
+    """Returns a WikipediaScraper instance with no rate limiting for tests"""
+    from ..fetcher import WikipediaScraper
 
-@pytest.fixture(scope="session", autouse=True)
-def mock_config():
-    """Mock the config module for all tests"""
-    from . import config_test
-
-    # Create patches for imported config values
-    patches = [
-        patch(
-            "pipelines.scrapping_dest_details.config.PROJECT_ID", config_test.PROJECT_ID
-        ),
-        patch(
-            "pipelines.scrapping_dest_details.config.DATASET_ID", config_test.DATASET_ID
-        ),
-        patch("pipelines.scrapping_dest_details.config.TABLE_ID", config_test.TABLE_ID),
-        patch(
-            "pipelines.scrapping_dest_details.config.BQ_TABLE_PATH",
-            config_test.BQ_TABLE_PATH,
-        ),
-        patch(
-            "pipelines.scrapping_dest_details.config.WIKIPEDIA_BASE_URL",
-            config_test.WIKIPEDIA_BASE_URL,
-        ),
-        patch(
-            "pipelines.scrapping_dest_details.config.TRAVEL_DESTINATIONS",
-            config_test.TRAVEL_DESTINATIONS,
-        ),
-        patch(
-            "pipelines.scrapping_dest_details.config.GCS_BUCKET_NAME",
-            config_test.GCS_BUCKET_NAME,
-        ),
-        patch(
-            "pipelines.scrapping_dest_details.config.GCS_WIKI_RAW_PREFIX",
-            config_test.GCS_WIKI_RAW_PREFIX,
-        ),
-    ]
-
-    # Start all patches
-    for p in patches:
-        p.start()
-
-    yield
-
-    # Stop all patches after tests are done
-    for p in patches:
-        p.stop()
+    return WikipediaScraper(rate_limit_delay=0)  # No delay in tests
 
 
 @pytest.fixture
-def mock_raw_data():
-    """Sample raw Wikipedia data for testing"""
+def sample_infobox_html():
+    """Sample HTML for a Wikipedia infobox"""
+    return """
+    <table class="infobox">
+        <tbody>
+            <tr><th>Country</th><td>United States</td></tr>
+            <tr><th>State</th><td>New York</td></tr>
+            <tr><th>Population</th></tr>
+            <tr><td>• Total</td><td>8,804,190 (2020)</td></tr>
+            <tr><th>Time zone</th><td>UTC−05:00 (EST)</td></tr>
+        </tbody>
+    </table>
+    """
+
+
+@pytest.fixture
+def sample_coordinates_html():
+    """Sample HTML for geographic coordinates"""
+    return '<span class="geo">40.7128; -74.0060</span>'
+
+
+@pytest.fixture
+def sample_description_html():
+    """Sample HTML for a description paragraph"""
+    return """
+    <div id="mw-content-text">
+        <div class="mw-parser-output">
+            <p class="mw-empty-elt"></p>
+            <p><b>New York City</b> (NYC), often called simply <b>New York</b>, is the most populous city in the United States.[2]
+            With an estimated 2019 population of 8,336,817 distributed over about 302.6 square miles (784 km<sup>2</sup>),
+            New York City is also the most densely populated major city in the United States.[3]</p>
+        </div>
+    </div>
+    """
+
+
+@pytest.fixture
+def sample_attractions_html():
+    """Sample HTML for attractions section"""
+    return """
+    <h2><span class="mw-headline" id="Attractions">Attractions</span></h2>
+    <ul>
+        <li><a href="/wiki/Statue_of_Liberty">Statue of Liberty</a> - Famous landmark</li>
+        <li><a href="/wiki/Central_Park">Central Park</a> - Urban park</li>
+        <li><a href="/wiki/Empire_State_Building">Empire State Building</a> - Iconic skyscraper</li>
+    </ul>
+    """
+
+
+@pytest.fixture
+def sample_climate_html():
+    """Sample HTML for climate information"""
+    return """
+    <h3><span class="mw-headline" id="Climate">Climate</span></h3>
+    <p>New York City has a humid subtropical climate (Köppen Cfa), with hot summers and cold winters.
+    The city averages 234 days with at least some sunshine annually.</p>
+    """
+
+
+@pytest.fixture
+def sample_full_html(
+    sample_description_html,
+    sample_infobox_html,
+    sample_coordinates_html,
+    sample_attractions_html,
+    sample_climate_html,
+):
+    """Combines all sample HTML sections into a full Wikipedia page"""
+    return f"""
+    <html>
+    <head><title>New York City - Wikipedia</title></head>
+    <body>
+        {sample_description_html}
+        {sample_infobox_html}
+        {sample_coordinates_html}
+        {sample_climate_html}
+        {sample_attractions_html}
+    </body>
+    </html>
+    """
+
+
+@pytest.fixture
+def sample_soup(sample_full_html):
+    """Returns a BeautifulSoup object of the sample HTML"""
+    return BeautifulSoup(sample_full_html, "html.parser")
+
+
+# Define test data
+@pytest.fixture
+def test_destination_data():
+    """Return test destination data"""
     return {
-        "title": "Paris",
-        "extract": "Paris is the capital of France.",
-        "url": "https://en.wikipedia.org/wiki/Paris",
-        "status_code": 200,
-        "headers": {"Content-Type": "text/html; charset=UTF-8"},
-        "content": "<html><body><div id='content'>Test content</div></body></html>",
-        "encoding": "UTF-8",
+        "destination": "Paris",
+        "country": "France",
+        "description": "The City of Light",
+        "attractions": ["Eiffel Tower", "Louvre Museum"],
+        "rating": 4.8,
+        "reviews_count": 5000,
+        "weather": {"average_temp": 15.5, "best_season": "Spring"},
+        "has_beaches": False,
+        "updated_at": "2023-06-01T12:00:00Z",
     }
 
 
 @pytest.fixture
-def mock_soup():
-    """Sample BeautifulSoup object for testing"""
-    html = """
-    <html>
-    <head><title>Paris - Wikipedia</title></head>
-    <body>
-        <div id="mw-content-text">
-            <div>
-                <p>Paris is the capital and most populous city of France.</p>
-                <div class="geo">48.8566; 2.3522</div>
-                <table class="infobox">
-                    <tr>
-                        <th>Country</th>
-                        <td>France</td>
-                    </tr>
-                    <tr>
-                        <th>Population</th>
-                        <td>2,148,271 (2020)</td>
-                    </tr>
-                    <tr>
-                        <th>Time zone</th>
-                        <td>UTC+1 (CET)</td>
-                    </tr>
-                    <tr>
-                        <th>Official language</th>
-                        <td>French</td>
-                    </tr>
-                </table>
-                <div class="image">
-                    <img src="//upload.wikimedia.org/wikipedia/commons/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques.jpg"/>
-                </div>
-                <h2><span id="Climate">Climate</span></h2>
-                <p>Paris has a typical Western European oceanic climate.</p>
-                <h2><span id="Landmarks">Landmarks</span></h2>
-                <ul>
-                    <li><a href="/wiki/Eiffel_Tower">Eiffel Tower</a> - iconic tower completed in 1889</li>
-                    <li><a href="/wiki/Louvre">Louvre Museum</a> - world's most visited museum</li>
-                </ul>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return BeautifulSoup(html, "html.parser")
+def mock_gcs_client():
+    """Create a mock GCS client"""
+    with patch("google.cloud.storage.Client") as mock_client:
+        yield mock_client
 
 
 @pytest.fixture
-def sample_destination_data():
-    """Sample processed destination data for testing"""
-    return [
-        {
-            "destination_name": "Paris",
-            "country": "France",
-            "continent": "Europe",
-            "description": "Paris is the capital of France.",
-            "climate": "Temperate",
-            "main_attractions": ["Eiffel Tower", "Louvre Museum", "Notre-Dame"],
-            "ingestion_timestamp": "2023-05-15T12:00:00",
-        },
-        {
-            "destination_name": "Rome",
-            "country": "Italy",
-            "continent": "Europe",
-            "description": "Rome is the capital of Italy.",
-            "climate": "Mediterranean",
-            "main_attractions": ["Colosseum", "Vatican", "Trevi Fountain"],
-            "ingestion_timestamp": "2023-05-15T12:00:00",
-        },
-    ]
+def mock_bq_client():
+    """Create a mock BigQuery client"""
+    with patch("google.cloud.bigquery.Client") as mock_client:
+        mock_client_instance = MagicMock()
+        mock_client.return_value = mock_client_instance
+        yield mock_client_instance
 
 
 @pytest.fixture
-def sample_processed_df(sample_destination_data):
-    """Sample pandas DataFrame for testing BigQuery loading"""
-    # Convert the list of dictionaries to a DataFrame
-    df = pd.DataFrame(sample_destination_data)
-
-    # Ensure the DataFrame has the expected columns for testing
-    if "main_attractions" in df.columns:
-        # Convert lists to strings for testing
-        df["main_attractions"] = df["main_attractions"].apply(json.dumps)
-
-    return df
-
-
-@pytest.fixture
-def mock_bigquery_client():
-    """Mock BigQuery client for testing"""
-    client = MagicMock()
-
-    # Mock dataset methods
-    mock_dataset = MagicMock()
-    client.dataset.return_value = mock_dataset
-
-    # Mock table methods
-    mock_table = MagicMock()
-    mock_dataset.table.return_value = mock_table
-
-    # Mock get_dataset and get_table methods
-    client.get_dataset.return_value = mock_dataset
-    client.get_table.return_value = mock_table
-
-    return client
-
-
-@pytest.fixture
-def mock_storage_client():
-    """Mock Storage client for testing"""
-    client = MagicMock()
-
-    # Mock bucket methods
+def mock_storage_bucket():
+    """Create a mock GCS bucket"""
     mock_bucket = MagicMock()
-    client.bucket.return_value = mock_bucket
 
-    # Mock blob methods
+    # Set up blob handling
     mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
+    mock_blob.download_as_text.return_value = json.dumps(
+        {"destination": "Paris", "country": "France"}
+    )
 
-    return client
+    # Mock return values for blob method with different paths
+    def mock_blob_func(blob_name):
+        if "destinations" in blob_name:
+            return mock_blob
+        elif "schemas" in blob_name:
+            schema_blob = MagicMock()
+            # Breaking long line for schema content
+            schema_content = {"fields": [{"name": "destination", "type": "STRING"}]}
+            schema_blob.download_as_text.return_value = json.dumps(schema_content)
+            return schema_blob
+        return mock_blob
+
+    mock_bucket.blob.side_effect = mock_blob_func
+
+    return mock_bucket
+
+
+@pytest.fixture
+def mock_env_vars():
+    """Mock environment variables"""
+    env_vars = {
+        "BQ_PROJECT_ID": "test-project",
+        "BQ_STAGING_DATASET_ID": "test_dataset",
+        "BQ_DESTINATION_DETAILS_TABLE_ID": "test_destinations",
+        "GCS_BUCKET_NAME": "test-bucket",
+        "GCS_WEATHER_BUCKET_NAME": "test-weather-bucket",
+        "TESTING": "true",
+    }
+
+    with patch.dict("os.environ", env_vars):
+        yield env_vars

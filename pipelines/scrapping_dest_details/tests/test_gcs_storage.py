@@ -1,166 +1,289 @@
-"""
-Tests for the GCS storage module in the scrapping_dest_details pipeline.
-"""
-
 import datetime
 import json
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from ..config import GCS_BUCKET_NAME
 from ..gcs_storage import (
-    _get_bucket,
-    _get_storage_client,
     upload_processed_wiki_data,
     upload_raw_wiki_data,
 )
 
 
-@patch("pipelines.scrapping_dest_details.gcs_storage._get_bucket")
-@patch("pipelines.scrapping_dest_details.gcs_storage.datetime")
-def test_upload_raw_wiki_data(mock_datetime, mock_get_bucket, mock_raw_data):
-    """Test uploading raw wiki data to GCS"""
-    # Set up mocks
-    mock_bucket = MagicMock()
-    mock_get_bucket.return_value = mock_bucket
-    mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
-
-    # Mock datetime to get consistent timestamps
-    mock_datetime.datetime.now.return_value = datetime.datetime(2023, 5, 15, 12, 0, 0)
-    mock_datetime.datetime.side_effect = lambda *args, **kw: datetime.datetime(
-        *args, **kw
-    )
-
-    # Call the function
-    result = upload_raw_wiki_data("Paris", mock_raw_data)
-
-    # Verify result
-    assert result is True
-
-    # Verify the correct blob was created
-    expected_path = "raw/wiki/2023/05/15/Paris_20230515_120000.json"
-    mock_bucket.blob.assert_called_once_with(expected_path)
-
-    # Verify the blob was uploaded with the correct content
-    mock_blob.upload_from_string.assert_called_once()
-    call_args = mock_blob.upload_from_string.call_args[0]
-    uploaded_json = call_args[0]
-    uploaded_data = json.loads(uploaded_json)
-    assert uploaded_data == mock_raw_data
+@pytest.fixture
+def sample_raw_wiki_data():
+    """Sample raw Wikipedia data for testing"""
+    return {
+        "title": "Paris",
+        "content": "Paris is the capital of France",
+        "sections": {
+            "Geography": "Paris is located in northern France",
+            "History": "Paris has a rich history dating back to Roman times",
+        },
+        "infobox": {
+            "Country": "France",
+            "Population": "2,161,000 (2019)",
+        },
+    }
 
 
-@patch("pipelines.scrapping_dest_details.gcs_storage._get_bucket")
-@patch("pipelines.scrapping_dest_details.gcs_storage.datetime")
-def test_upload_raw_wiki_data_failure(mock_datetime, mock_get_bucket):
-    """Test handling failure when uploading raw data"""
-    # Set up mocks
-    mock_bucket = MagicMock()
-    mock_get_bucket.return_value = mock_bucket
-    mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
-    mock_blob.upload_from_string.side_effect = Exception("Upload error")
-
-    # Mock datetime
-    mock_datetime.datetime.now.return_value = datetime.datetime(2023, 5, 15, 12, 0, 0)
-    mock_datetime.datetime.side_effect = lambda *args, **kw: datetime.datetime(
-        *args, **kw
-    )
-
-    # Call the function
-    result = upload_raw_wiki_data("Paris", {"test": "data"})
-
-    # Verify result
-    assert result is False
-
-
-@patch("pipelines.scrapping_dest_details.gcs_storage._get_bucket")
-@patch("pipelines.scrapping_dest_details.gcs_storage.datetime")
-def test_upload_processed_wiki_data(
-    mock_datetime, mock_get_bucket, sample_destination_data
-):
-    """Test uploading processed wiki data to GCS"""
-    # Set up mocks
-    mock_bucket = MagicMock()
-    mock_get_bucket.return_value = mock_bucket
-    mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
-
-    # Mock datetime to get consistent timestamps
-    mock_datetime.datetime.now.return_value = datetime.datetime(2023, 5, 15, 12, 0, 0)
-    mock_datetime.datetime.side_effect = lambda *args, **kw: datetime.datetime(
-        *args, **kw
-    )
-
-    # Call the function
-    result = upload_processed_wiki_data(sample_destination_data)
-
-    # Verify result
-    assert result is True
-
-    # Verify the correct blob was created
-    expected_path = "processed/wiki/destinations_20230515_120000.json"
-    mock_bucket.blob.assert_called_once_with(expected_path)
-
-    # Verify the blob was uploaded with the correct content
-    mock_blob.upload_from_string.assert_called_once()
-
-    # Ensure datetime objects were converted to strings for JSON serialization
-    call_args = mock_blob.upload_from_string.call_args[0]
-    uploaded_json = call_args[0]
-    uploaded_data = json.loads(uploaded_json)
-
-    # Check that data was serialized properly
-    assert len(uploaded_data) == 2
-    assert uploaded_data[0]["destination_name"] == "Paris"
-    assert uploaded_data[1]["destination_name"] == "Rome"
-    # Check that datetime was properly converted to string
-    assert isinstance(uploaded_data[0]["ingestion_timestamp"], str)
-
-
-@patch("pipelines.scrapping_dest_details.gcs_storage._get_bucket")
-def test_upload_processed_wiki_data_failure(mock_get_bucket):
-    """Test handling failure when uploading processed data"""
-    # Set up mocks
-    mock_bucket = MagicMock()
-    mock_get_bucket.return_value = mock_bucket
-    mock_blob = MagicMock()
-    mock_bucket.blob.return_value = mock_blob
-    mock_blob.upload_from_string.side_effect = Exception("Upload error")
-
-    # Call the function
-    result = upload_processed_wiki_data([{"test": "data"}])
-
-    # Verify result
-    assert result is False
+@pytest.fixture
+def sample_processed_wiki_data():
+    """Sample processed Wikipedia data for testing"""
+    return [
+        {
+            "destination_name": "Paris",
+            "description": "Paris is the capital of France",
+            "country": "France",
+            "population_count": 2161000,
+            "population_year": 2019,
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+        },
+        {
+            "destination_name": "London",
+            "description": "London is the capital of the United Kingdom",
+            "country": "United Kingdom",
+            "population_count": 8982000,
+            "population_year": 2019,
+            "latitude": 51.5074,
+            "longitude": -0.1278,
+        },
+    ]
 
 
 @patch("google.cloud.storage.Client")
 def test_get_storage_client(mock_client_class):
-    """Test getting a storage client"""
-    # Set up mock
+    """Test _get_storage_client creates and returns a storage client"""
+    from ..gcs_storage import _get_storage_client
+
+    # Arrange
     mock_client = MagicMock()
     mock_client_class.return_value = mock_client
 
-    # Call the function
+    # Act
     client = _get_storage_client()
 
-    # Verify
-    assert client == mock_client
+    # Assert
+    assert client is mock_client
     mock_client_class.assert_called_once()
 
 
-@patch("pipelines.scrapping_dest_details.gcs_storage._get_storage_client")
-@patch("pipelines.scrapping_dest_details.gcs_storage.GCS_BUCKET_NAME", "test-bucket")
-def test_get_bucket(mock_get_client):
-    """Test getting a GCS bucket"""
-    # Set up mock
+@patch("google.cloud.storage.Client")
+def test_get_bucket(mock_client_class):
+    """Test _get_bucket returns the correct bucket"""
+    from ..gcs_storage import _get_bucket
+
+    # Arrange
     mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
     mock_bucket = MagicMock()
-    mock_get_client.return_value = mock_client
     mock_client.bucket.return_value = mock_bucket
 
-    # Call the function
+    # Act
     bucket = _get_bucket()
 
-    # Verify
-    assert bucket == mock_bucket
-    mock_client.bucket.assert_called_once_with("test-bucket")
+    # Assert
+    assert bucket is mock_bucket
+    mock_client.bucket.assert_called_once_with(GCS_BUCKET_NAME)
+
+
+@patch("google.cloud.storage.Client")
+def test_upload_raw_wiki_data_success(mock_client_class):
+    """Test upload_raw_wiki_data successfully uploads the data"""
+    # Arrange
+    mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
+    mock_bucket = MagicMock()
+    mock_client.bucket.return_value = mock_bucket
+
+    mock_blob = MagicMock()
+    mock_bucket.blob.return_value = mock_blob
+
+    # Set up the datetime patch
+    with patch("datetime.datetime") as mock_datetime:
+        mock_now = MagicMock()
+        mock_datetime.now.return_value = mock_now
+        mock_now.strftime.side_effect = lambda fmt: (
+            "2023/01/01" if fmt == "%Y/%m/%d" else "20230101_120000"
+        )
+
+        # Test data
+        destination = "Paris"
+        data = {"title": "Paris", "content": "Beautiful city"}
+
+        # Act
+        result = upload_raw_wiki_data(destination, data)
+
+        # Assert
+        assert result is True
+        expected_blob_path = "raw/wiki/2023/01/01/Paris_20230101_120000.json"
+        mock_bucket.blob.assert_called_once_with(expected_blob_path)
+        mock_blob.upload_from_string.assert_called_once()
+
+        # Check JSON was formatted correctly
+        call_args = mock_blob.upload_from_string.call_args[0]
+        uploaded_data = json.loads(call_args[0])
+        assert uploaded_data == data
+        assert (
+            mock_blob.upload_from_string.call_args[1]["content_type"]
+            == "application/json"
+        )
+
+
+@patch("google.cloud.storage.Client")
+def test_upload_raw_wiki_data_with_spaces(mock_client_class):
+    """Test upload_raw_wiki_data handles destination names with spaces"""
+    # Arrange
+    mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
+    mock_bucket = MagicMock()
+    mock_client.bucket.return_value = mock_bucket
+
+    mock_blob = MagicMock()
+    mock_bucket.blob.return_value = mock_blob
+
+    # Set up the datetime patch
+    with patch("datetime.datetime") as mock_datetime:
+        mock_now = MagicMock()
+        mock_datetime.now.return_value = mock_now
+        mock_now.strftime.side_effect = lambda fmt: (
+            "2023/01/01" if fmt == "%Y/%m/%d" else "20230101_120000"
+        )
+
+        # Test data
+        destination = "New York City"
+        data = {"title": "New York City", "content": "The Big Apple"}
+
+        # Act
+        result = upload_raw_wiki_data(destination, data)
+
+        # Assert
+        assert result is True
+        expected_blob_path = "raw/wiki/2023/01/01/New_York_City_20230101_120000.json"
+        mock_bucket.blob.assert_called_once_with(expected_blob_path)
+
+
+@patch("google.cloud.storage.Client")
+def test_upload_raw_wiki_data_exception(mock_client_class):
+    """Test upload_raw_wiki_data handles exceptions properly"""
+    # Arrange
+    mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
+    # Simulate an exception when getting the bucket
+    mock_client.bucket.side_effect = Exception("Bucket access error")
+
+    # Test data
+    destination = "Paris"
+    data = {"title": "Paris", "content": "Beautiful city"}
+
+    # Act
+    result = upload_raw_wiki_data(destination, data)
+
+    # Assert
+    assert result is False
+
+
+@patch("google.cloud.storage.Client")
+def test_upload_processed_wiki_data_success(
+    mock_client_class, sample_processed_wiki_data
+):
+    """Test upload_processed_wiki_data successfully uploads the data"""
+    # Arrange
+    mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
+    mock_bucket = MagicMock()
+    mock_client.bucket.return_value = mock_bucket
+
+    mock_blob = MagicMock()
+    mock_bucket.blob.return_value = mock_blob
+
+    # Set up the datetime patch
+    with patch("datetime.datetime") as mock_datetime:
+        mock_now = MagicMock()
+        mock_datetime.now.return_value = mock_now
+        mock_now.strftime.return_value = "20230101_120000"
+
+        # Act
+        result = upload_processed_wiki_data(sample_processed_wiki_data)
+
+        # Assert
+        assert result is True
+        expected_blob_path = "processed/wiki/destinations_20230101_120000.json"
+        mock_bucket.blob.assert_called_once_with(expected_blob_path)
+        mock_blob.upload_from_string.assert_called_once()
+
+        # Check JSON was formatted correctly
+        call_args = mock_blob.upload_from_string.call_args[0]
+        uploaded_data = json.loads(call_args[0])
+        assert uploaded_data == sample_processed_wiki_data
+        assert (
+            mock_blob.upload_from_string.call_args[1]["content_type"]
+            == "application/json"
+        )
+
+
+@patch("google.cloud.storage.Client")
+def test_upload_processed_wiki_data_with_datetime(mock_client_class):
+    """Test upload_processed_wiki_data handles datetime objects in the data"""
+    # Arrange
+    mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
+    mock_bucket = MagicMock()
+    mock_client.bucket.return_value = mock_bucket
+
+    mock_blob = MagicMock()
+    mock_bucket.blob.return_value = mock_blob
+
+    # Create data with a datetime field
+    data = [
+        {
+            "destination_name": "Paris",
+            "timestamp": datetime.datetime(2023, 1, 1, 12, 0, 0),
+        }
+    ]
+
+    # Set up the datetime patch for the function
+    with patch("datetime.datetime") as mock_datetime:
+        mock_now = MagicMock()
+        mock_datetime.now.return_value = mock_now
+        mock_now.strftime.return_value = "20230101_120000"
+
+        # Act
+        result = upload_processed_wiki_data(data)
+
+        # Assert
+        assert result is True
+        mock_blob.upload_from_string.assert_called_once()
+
+        # Check datetime was serialized properly
+        call_args = mock_blob.upload_from_string.call_args[0]
+        uploaded_data = json.loads(call_args[0])
+        assert uploaded_data[0]["timestamp"] == "2023-01-01 12:00:00"
+
+
+@patch("google.cloud.storage.Client")
+def test_upload_processed_wiki_data_exception(mock_client_class):
+    """Test upload_processed_wiki_data handles exceptions properly"""
+    # Arrange
+    mock_client = MagicMock()
+    mock_client_class.return_value = mock_client
+
+    # Simulate an exception when getting the bucket
+    mock_client.bucket.side_effect = Exception("Bucket access error")
+
+    # Test data
+    data = [{"destination_name": "Paris"}]
+
+    # Act
+    result = upload_processed_wiki_data(data)
+
+    # Assert
+    assert result is False
