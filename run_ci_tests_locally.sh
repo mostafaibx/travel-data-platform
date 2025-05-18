@@ -64,29 +64,30 @@ mkdir -p ./mock_data/scrapping_dest_details
 # Create dry run config
 cat > pipelines/scrapping_dest_details/tests/dry_run_config.py << EOL
 # Mock config for dry run
-TRAVEL_DESTINATIONS = ['Paris', 'Rome', 'New York']
-PROJECT_ID = 'test-project'
-DATASET_ID = 'test_dataset'
-TABLE_ID = 'test_destinations'
-BQ_TABLE_PATH = 'test-project.test_dataset.test_destinations'
-BUCKET_NAME = 'test-bucket'
+TRAVEL_DESTINATIONS = ["Paris", "Rome", "New York"]
+PROJECT_ID = "test-project"
+DATASET_ID = "test_dataset"
+TABLE_ID = "test_destinations"
+BQ_TABLE_PATH = "test-project.test_dataset.test_destinations"
+BUCKET_NAME = "test-bucket"
 EOL
 
-# Run the scrapping pipeline in dry-run mode
-cd pipelines/
+# Run the scrapping pipeline in dry-run mode as a module
+echo "Running dry run with proper module import..."
 python -c "
 import sys
 import os
 from unittest.mock import patch
 import json
 try:
-    from scrapping_dest_details.pipeline import run_pipeline
+    # Use absolute imports
+    from pipelines.scrapping_dest_details.pipeline import run_pipeline
     
-    # Mock essential external dependencies
-    with patch('scrapping_dest_details.fetcher.requests.Session'), \\
-         patch('scrapping_dest_details.gcs_storage._get_bucket'), \\
-         patch('scrapping_dest_details.bigquery_loader.bigquery.Client'), \\
-         patch('scrapping_dest_details.pipeline.TRAVEL_DESTINATIONS', ['Paris', 'Rome']):
+    # Mock essential external dependencies with absolute import paths
+    with patch('pipelines.scrapping_dest_details.fetcher.requests.Session'), \\
+         patch('pipelines.scrapping_dest_details.gcs_storage._get_bucket'), \\
+         patch('pipelines.scrapping_dest_details.bigquery_loader.bigquery.Client'), \\
+         patch('pipelines.scrapping_dest_details.pipeline.TRAVEL_DESTINATIONS', ['Paris', 'Rome']):
         
         # Run pipeline in dry mode
         success = run_pipeline()
@@ -97,7 +98,6 @@ except Exception as e:
     print(f'Error: {str(e)}')
     sys.exit(1)
 "
-cd ..
 
 # Step 6: Security checks
 echo "Running security checks..."
