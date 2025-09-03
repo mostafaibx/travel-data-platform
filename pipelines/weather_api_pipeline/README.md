@@ -1,246 +1,116 @@
-# Weather API Pipeline - Technical Documentation
+## Weather API Pipeline
 
-## Overview
+### Overview
+- Fetches daily weather forecasts from OpenWeather for a curated list of locations.
+- Normalizes timestamps to UTC and returns a tabular DataFrame.
+- Stores raw API JSON to GCS for lineage and auditability.
+- Stores transformed data to GCS (JSON.gz) and loads it into BigQuery.
+- Emits completeness and data‑quality metrics and a deterministic logical key for idempotency.
 
-The Weather API Pipeline is a data engineering solution designed to collect weather forecast data for popular travel destinations from the OpenWeather API. It processes this data and stores it in both Google BigQuery for analytics and Google Cloud Storage for data lineage. This pipeline is designed to run daily, providing travel agencies with up-to-date weather information for key tourist destinations.
-
-## Architecture
-
+### Architecture
 ```
-                   ┌─────────────────┐
-                   │                 │
-                   │  OpenWeather    │
-                   │  API            │
-                   │                 │
-                   └────────┬────────┘
-                            │
-                            ▼
-┌───────────────────────────────────────────────┐
-│                                               │
-│  Weather API Pipeline                         │
-│  ┌───────────────┐    ┌────────────────────┐  │
-│  │               │    │                    │  │
-│  │   Fetcher     │───▶│  Data Processor    │  │
-│  │               │    │                    │  │
-│  └───────────────┘    └──────┬─────┬──────┘  │
-│                              │     │         │
-└──────────────────────────────│─────│─────────┘
-                               │     │
-                               │     │
-                    ┌──────────▼─┐   │    ┌──────────────┐
-                    │            │   │    │              │
-                    │  BigQuery  │   └───▶│  GCS Storage │
-                    │            │        │              │
-                    └────────────┘        └──────────────┘
+OpenWeather API
+      │
+      ▼
+WeatherFetcher ──▶ normalize (in pipeline) ──▶ GCSStorage (JSON.gz) ──▶ BigQueryLoader (append)
+      │                │                          ▲                         ▲
+      └── raw JSON ────┴──────────────────────────┘                         │
+                    metrics & logs                                       table
 ```
 
-## Components
+### Components
+- Fetcher (`fetcher.py`)
+  - Calls OpenWeather One Call endpoint per location.
+  - Shapes daily forecasts into rows; adds UTC `forecast_date` and `logical_key`.
+  - Logs per‑location completeness (expected vs available vs fetched days) and defaulted field counts.
 
-The pipeline is organized into several modular components, each with a specific responsibility:
+- Pipeline (`pipeline.py`)
+  - Orchestrates: fetch → normalize timestamps to UTC → store.
+  - Structured logging, run lifecycle messages, error handling.
 
-### 1. Fetcher Module (`fetcher.py`)
+- Storage (`gcs_storage.py`)
+  - Raw: stores full API responses per run as gzipped JSON.
+  - Processed: serializes DataFrame to JSON (records, ISO timestamps), compresses with gzip.
+  - Uploads with `content_encoding=gzip`.
 
-Responsible for interacting with the OpenWeather API.
+- BigQuery loader (`bigquery_loader.py`)
+  - Appends transformed rows to `project.dataset.table` using `load_table_from_dataframe`.
+  - Autodetects schema; logs destination and row counts.
 
-- **Key Function**: `get_weather_data(lat, lon, exclude, units, lang)`
-- **Features**:
-  - Makes HTTP requests to OpenWeather API
-  - Supports customization (units, language, data exclusions)
-  - Implements error handling and logging
-  - Returns complete weather data JSON
+- Configuration (`config.py`)
+  - Pydantic models (`Location`, `WeatherConfig`) with strict validation (ranges for lat/lon, URL validation, immutability).
+  - Required runtime fields: `api_key`, `api_base_url`, `gcs_bucket`; knobs: `forecast_days`, `locations`.
 
-### 2. Pipeline Module (`pipeline.py`)
+### Data flow
+1. Iterate configured `locations` and call OpenWeather.
+2. Build one row per location×day up to `forecast_days`.
+3. Normalize timestamps (UTC), compute `forecast_date` from API epoch, and add `logical_key`.
+4. Emit completeness metrics (per location) and a final summary.
+5. Write raw API JSON to GCS (timestamped object in `weather_raw/`).
+6. Write transformed JSON.gz to GCS (timestamped object in `weather_data/`).
+7. Load transformed DataFrame into BigQuery (append).
 
-The orchestration component that coordinates the entire ETL process.
+### Data model (key columns)
+- Identity: `logical_key` ("city|country|YYYY-MM-DD"), `city`, `country`, `latitude`, `longitude`.
+- Dates/times: `forecast_date` (UTC date), `forecast_timestamp` (epoch→datetime), `sunrise`, `sunset`, `ingestion_timestamp`.
+- Weather: `max_temp`, `min_temp`, `day_temp`, `night_temp`, `feels_like_day`, `feels_like_night`, `humidity`, `wind_speed`.
+- Conditions: `weather_main`, `weather_description`, `weather_icon`, `precipitation_probability`, `rain`, `uvi`, `clouds`.
 
-- **Key Functions**:
-  - `fetch_forecast_data()`: Collects and processes data for all destinations
-  - `upload_to_bigquery()`: Loads processed data into BigQuery
-  - `run_pipeline()`: Main orchestration function
-  
-- **Features**:
-  - Predefined list of 15 popular travel destinations
-  - Extracts and transforms weather data into a structured format
-  - Handles API responses and error conditions
-  - Creates BigQuery tables with appropriate schema if they don't exist
-  - Implements comprehensive logging
+### Design patterns and practices
+- Separation of concerns: fetch, orchestrate, store in distinct classes.
+- Configuration via Pydantic with strict schemas (immutable models, extra=forbid).
+- Observability: structured logs, per‑location completeness, final summary (coverage %, defaults filled, missing % per field).
+- Idempotency: deterministic `logical_key` for downstream dedup/merge.
+- Reliability: request timeouts, narrow exception handling, graceful degradation per location.
+- Data hygiene: UTC‑normalized timestamps; explicit defaults for optional fields.
+- Error handling: try/except blocks & partial failures don't stop the entire pipeline.
 
-### 3. GCS Storage Module (`gcs_storage.py`)
+### Running
+Prerequisites
+- Python 3.12+, `requests`, `pandas`, `google-cloud-storage`.
+- GCP auth (ADC) and a GCS bucket.
+- OpenWeather API key.
 
-Handles raw data storage in Google Cloud Storage for data lineage.
-
-- **Key Function**: `upload_raw_data_to_gcs(data, raw_responses)`
-- **Features**:
-  - Implements a custom JSON encoder for datetime objects
-  - Creates a timestamp-based folder structure (YYYY/MM/DD)
-  - Adds metadata to raw data for tracking and auditing
-  - Error handling and logging
-
-### 4. Configuration Module (`config.py`)
-
-Centralizes all configuration parameters for the pipeline.
-
-- **Features**:
-  - API credentials and endpoint URLs
-  - GCP project, dataset, and table IDs
-  - GCS bucket and path configurations
-
-## Data Flow
-
-1. **Data Collection**:
-   - The pipeline fetches forecast data for 15 predefined travel destinations
-   - For each location, it requests 2 days of forecast data (today and tomorrow)
-   - All API responses are stored in their raw form
-
-2. **Data Processing**:
-   - Raw JSON responses are transformed into a structured format
-   - Key weather metrics relevant for travel are extracted
-   - Data is organized with appropriate types and dimensions
-
-3. **Data Storage**:
-   - **BigQuery**: Processed data is loaded into a structured table
-   - **GCS**: Raw JSON responses with metadata are stored in a date-partitioned structure
-
-## Implementation Details
-
-### API Integration
-
-The pipeline uses the OpenWeather API's "One Call" endpoint, which provides:
-- Current weather
-- Daily forecasts
-- Weather conditions, temperatures, and other metrics
-
-The API integration is designed to be:
-- Resilient to API failures
-- Configurable in terms of units and data components
-- Resource-efficient by avoiding unnecessary data retrieval
-
-### BigQuery Schema
-
-The BigQuery table is designed with a schema that optimizes for:
-- Travel-specific analytics
-- Efficient querying
-- Proper data typing
-
-Key fields include:
-- Location data (city, country, coordinates)
-- Forecast date and timestamp
-- Temperature metrics (max, min, day, night, feels like)
-- Weather conditions (main category, description, icon)
-- Travel-relevant metrics (humidity, wind, UV index, precipitation)
-- Temporal data (sunrise, sunset)
-- Data lineage (ingestion timestamp)
-
-### GCS Raw Data Storage
-
-Raw data is stored in GCS following best practices:
-- Hierarchical, date-based path structure
-- Metadata enrichment
-- Standardized file naming
-
-File path format:
+Environment (examples)
 ```
-gs://travel-data-platform-raw/weather_data/raw/YYYY/MM/DD/weather_data_YYYYMMDD.json
+export WEATHER_API_KEY=...
+export GCS_BUCKET_NAME=your-bucket
+export BQ_PROJECT_ID=your-project
+export BQ_STAGING_DATASET_ID=your_dataset
+export BQ_WEATHER_TABLE_ID=weather_forecast
 ```
 
-JSON payload includes:
-- Metadata section with provenance information
-- Raw API responses for all locations
+Programmatic usage
+```python
+from pipelines.weather_api_pipeline import WeatherPipeline
+from pipelines.weather_api_pipeline.config import WeatherConfig, Location
 
-### Error Handling
-
-The pipeline implements comprehensive error handling:
-- Individual location failures don't stop the entire pipeline
-- API errors are logged but allow the pipeline to continue
-- Database and storage errors are captured and reported
-- All errors include detailed logging for troubleshooting
-
-## Running the Pipeline
-
-### Prerequisites
-
-1. Google Cloud Platform account with:
-   - BigQuery dataset
-   - GCS bucket
-   - Proper IAM permissions
-
-2. OpenWeather API key
-
-3. Python 3.7+ with required libraries (see requirements.txt)
-
-### Configuration
-
-1. Set API key and GCP settings in `config.py` or environment variables
-2. Ensure GCP authentication is properly set up
-
-### Execution
-
-Run the pipeline via:
-
-```bash
-python -m pipelines.weather_api_pipeline.pipeline
+config = WeatherConfig(
+    api_key="${WEATHER_API_KEY}",
+    api_base_url="https://api.openweathermap.org",
+    gcs_bucket="your-bucket",
+    forecast_days=2,
+    locations=[
+        Location(city="London", country="UK", latitude=51.5074, longitude=-0.1278),
+    ],
+)
+WeatherPipeline(config).run()
 ```
 
-Or import and run programmatically:
+Object naming
+- Raw: `weather_raw/{YYYYMMDD_HHMMSS}_raw_responses.json.gz`
+- Processed: `weather_data/{YYYYMMDD_HHMMSS}_weather_forecast.json.gz`
 
 ```python
 from pipelines.weather_api_pipeline import run_pipeline
 run_pipeline()
 ```
 
-## Best Practices Implemented
-
-### 1. Modularity
-
-The code is organized into logical modules with clear separation of concerns:
-- API interaction (fetcher.py)
-- Data transformation and orchestration (pipeline.py)
-- Storage mechanisms (gcs_storage.py)
-- Configuration (config.py)
-
-### 2. Error Handling
-
-- Comprehensive try/except blocks
-- Detailed error logging
-- Graceful degradation (partial failures don't stop the entire pipeline)
-
-### 3. Logging
-
-- Consistent logging format throughout the codebase
-- Different log levels (INFO, WARNING, ERROR)
-- Useful context in log messages
-
-### 4. Type Annotations
-
-- Python type hints used throughout the codebase
-- Improves code readability and IDE support
-- Helps prevent type-related bugs
-
-### 5. Configuration Management
-
-- Centralized configuration
-- Environment variable support
-- Separation of code and configuration
-
-### 6. Data Integrity
-
-- Raw data preservation for lineage
-- Consistent schema enforcement
-- Proper data typing
-
-### 7. Resource Efficiency
-
-- Batched BigQuery uploads
-- Selective API data retrieval
-- Efficient data processing
-
-## Monitoring and Maintenance
 
 ### Monitoring Considerations
 
 1. **Pipeline Success/Failure**:
    - The pipeline logs completion status
-   - Can be integrated with monitoring systems (not implemented yet)
 
 2. **Data Quality**:
    - Row counts are logged

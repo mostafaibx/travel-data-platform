@@ -1,83 +1,71 @@
-import datetime
-import json
+"""Google Cloud Storage operations for the Weather API pipeline.
+
+Handles storing both raw API responses and transformed data as gzipped JSON.
+"""
+import gzip
 import logging
-from typing import Any, Dict, List
-
+from datetime import datetime
+import pandas as pd
 from google.cloud import storage
+from google.api_core.exceptions import GoogleAPIError
 
-from .config import BUCKET_NAME, PROJECT_ID, WEATHER_RAW_PATH
+from .config import WeatherConfig
 
 logger = logging.getLogger(__name__)
 
-# Custom JSON encoder to handle datetime objects
+class GCSStorage:
+    """Handles storage operations to Google Cloud Storage."""
+    
+    def __init__(self, config: WeatherConfig):
+        """Initialize GCS storage handler.
+        
+        Args:
+            config: Configuration containing GCS settings
+        """
+        self.config = config
+        self.client = storage.Client()
+        self.bucket = self.client.bucket(config.gcs_bucket)
+        
+        logger.info("Initialized GCS storage handler", 
+                   extra={"bucket": config.gcs_bucket})
 
+    def _compress_data(self, data: str) -> bytes:
+        """Compress string data using gzip.
+        
+        Args:
+            data: String data to compress
+            
+        Returns:
+            bytes: Compressed data
+        """
+        return gzip.compress(data.encode('utf-8'))
 
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, (datetime.datetime, datetime.date)):
-            return obj.isoformat()
-        return super(DateTimeEncoder, self).default(obj)
+    def store_raw_responses(self, raw_payloads: list[dict]) -> bool:
+        """Store raw API responses in GCS as gzipped JSON.
 
-
-def upload_raw_data_to_gcs(
-    data: List[Dict[str, Any]], raw_responses: Dict[str, Dict[str, Any]]
-) -> bool:
-    """
-    Upload raw weather data as JSON to Google Cloud Storage.
-
-    Args:
-        data: Processed weather data for BigQuery (used for metadata)
-        raw_responses: Raw responses from the Weather API
-
-    Returns:
-        bool: True if upload was successful, False otherwise
-    """
-    try:
-        # Initialize the storage client
-        storage_client = storage.Client(project=PROJECT_ID)
-
-        # Get bucket, create if doesn't exist
+        The payload is expected to be a list of dicts with keys like
+        {city, country, latitude, longitude, response}.
+        """
         try:
-            bucket = storage_client.get_bucket(BUCKET_NAME)
-        except Exception:
-            bucket = storage_client.create_bucket(BUCKET_NAME)
-            logger.info(f"Created bucket {BUCKET_NAME}")
+            if not raw_payloads:
+                logger.warning("No raw payloads to store in GCS")
+                return True
 
-        # Create a timestamp-based folder structure
-        today = datetime.datetime.now()
-        year_month = today.strftime("%Y/%m")
-        day = today.strftime("%d")
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            blob_name = f"weather_raw/{timestamp}_raw_responses.json.gz"
+            blob = self.bucket.blob(blob_name)
 
-        # Path format: weather_data/raw/YYYY/MM/DD/weather_data_YYYYMMDD.json
-        file_timestamp = today.strftime("%Y%m%d")
-        object_name = (
-            f"{WEATHER_RAW_PATH}/{year_month}/{day}/weather_data_{file_timestamp}.json"
-        )
+            json_str = pd.Series(raw_payloads).to_json(orient='values')
+            compressed = self._compress_data(json_str)
 
-        # Create JSON payload with raw data and metadata
-        payload = {
-            "metadata": {
-                "timestamp": today.isoformat(),
-                "source": "OpenWeather API",
-                "locations_count": len(raw_responses),
-                "records_count": len(data),
-                "data_days": 2,  # We're fetching 2 days of data
-            },
-            "raw_data": raw_responses,
-        }
+            blob.content_encoding = 'gzip'
+            blob.upload_from_string(compressed, content_type='application/json')
 
-        # Convert to string using custom encoder for datetime objects
-        json_data = json.dumps(payload, indent=2, cls=DateTimeEncoder)
-
-        # Upload to GCS
-        blob = bucket.blob(object_name)
-        blob.upload_from_string(json_data, content_type="application/json")
-
-        logger.info(
-            f"Successfully uploaded raw weather data to gs://{BUCKET_NAME}/{object_name}"
-        )
-        return True
-
-    except Exception as e:
-        logger.error(f"Error uploading raw data to GCS: {e}")
-        return False
+            logger.info(
+                "Stored raw API responses in GCS",
+                extra={"blob": blob_name, "size_bytes": len(compressed)},
+            )
+            return True
+        except (ValueError, TypeError, GoogleAPIError) as e:
+            logger.exception("Failed to store raw responses in GCS", extra={"error": str(e)})
+            return False
